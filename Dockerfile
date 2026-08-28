@@ -16,7 +16,9 @@ COPY backend/Cargo.toml backend/Cargo.lock* ./backend/
 WORKDIR /app/backend
 RUN mkdir src && printf 'fn main() {}' > src/main.rs && cargo build --release && rm -rf src
 COPY backend/src ./src
-RUN cargo build --release
+# COPY preserves source mtimes. Refresh the entry point so Cargo cannot retain
+# the dependency-cache stage's dummy binary when the real source is older.
+RUN touch src/main.rs && cargo build --release
 
 FROM alpine:3.22
 ARG BUILD_SHA=dev
