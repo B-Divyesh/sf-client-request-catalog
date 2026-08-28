@@ -1,0 +1,252 @@
+{
+  "communities": {
+    "0": [
+      "src_main",
+      "src_main_additem",
+      "src_main_api",
+      "src_main_app",
+      "src_main_basket",
+      "src_main_catalog",
+      "src_main_esc",
+      "src_main_isowner",
+      "src_main_item",
+      "src_main_itemcount",
+      "src_main_legal",
+      "src_main_loadcatalog",
+      "src_main_loadlicensefromurl",
+      "src_main_loadowner",
+      "src_main_loginscreen",
+      "src_main_money",
+      "src_main_product",
+      "src_main_rendercatalog",
+      "src_main_renderowner",
+      "src_main_restorelicense",
+      "src_main_shell",
+      "src_main_submitrequest",
+      "src_main_verifylicense"
+    ],
+    "1": [
+      "axe_core_playwright",
+      "package",
+      "package_devdependencies",
+      "package_devdependencies_axe_core_playwright",
+      "package_devdependencies_playwright_test",
+      "package_devdependencies_typescript",
+      "package_devdependencies_vite",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_build",
+      "package_scripts_dev",
+      "package_scripts_test",
+      "package_scripts_test_e2e",
+      "package_version",
+      "playwright_test",
+      "typescript",
+      "vite"
+    ],
+    "2": [
+      "backend_src_main",
+      "backend_src_main_catalog",
+      "backend_src_main_create_request",
+      "backend_src_main_creates_a_valid_pdf_header",
+      "backend_src_main_inboxrow",
+      "backend_src_main_product",
+      "backend_src_main_productinput",
+      "backend_src_main_requestinput",
+      "backend_src_main_requestitem",
+      "backend_src_main_simple_pdf",
+      "backend_src_main_statusinput",
+      "backend_src_main_valid_email",
+      "backend_src_main_validates_normal_email",
+      "backend_src_main_window",
+      "instant",
+      "option",
+      "string",
+      "vec"
+    ],
+    "3": [
+      "backend_src_main_create_product",
+      "backend_src_main_error",
+      "backend_src_main_get_catalog",
+      "backend_src_main_update_status",
+      "json",
+      "path",
+      "response",
+      "statuscode"
+    ],
+    "4": [
+      "backend_src_main_delete_requests",
+      "backend_src_main_export_csv",
+      "backend_src_main_export_pdf",
+      "backend_src_main_overview",
+      "backend_src_main_owner",
+      "headermap",
+      "state"
+    ],
+    "5": [
+      "arc",
+      "backend_src_main_appstate",
+      "backend_src_main_health",
+      "hashmap",
+      "intoresponse",
+      "mutex"
+    ],
+    "6": [
+      "backend_src_main_init_db",
+      "backend_src_main_main",
+      "backend_src_main_shutdown",
+      "error",
+      "result",
+      "sqlitepool"
+    ],
+    "7": [
+      "backend_src_main_rate_limit",
+      "next",
+      "request"
+    ],
+    "8": [
+      "e2e_catalog_spec"
+    ],
+    "9": [
+      "pkg_client_request_catalog_server"
+    ],
+    "10": [
+      "playwright_config"
+    ],
+    "11": [
+      "tests_client_test"
+    ],
+    "12": [
+      "vite_config"
+    ]
+  },
+  "cohesion": {
+    "0": 0.18972332015810275,
+    "1": 0.1111111111111111,
+    "2": 0.21568627450980393,
+    "3": 0.5,
+    "4": 0.6190476190476191,
+    "5": 0.3333333333333333,
+    "6": 0.3333333333333333,
+    "7": 0.6666666666666666,
+    "8": 1.0,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0
+  },
+  "gods": [
+    {
+      "id": "backend_src_main_appstate",
+      "label": "AppState",
+      "degree": 18
+    },
+    {
+      "id": "backend_src_main_overview",
+      "label": "Overview",
+      "degree": 12
+    },
+    {
+      "id": "backend_src_main_error",
+      "label": "error()",
+      "degree": 12
+    },
+    {
+      "id": "backend_src_main_create_request",
+      "label": "create_request()",
+      "degree": 10
+    },
+    {
+      "id": "backend_src_main_update_status",
+      "label": "update_status()",
+      "degree": 10
+    },
+    {
+      "id": "backend_src_main_create_product",
+      "label": "create_product()",
+      "degree": 9
+    },
+    {
+      "id": "backend_src_main_owner",
+      "label": "owner()",
+      "degree": 9
+    },
+    {
+      "id": "src_main_rendercatalog",
+      "label": "renderCatalog()",
+      "degree": 9
+    },
+    {
+      "id": "backend_src_main_get_catalog",
+      "label": "get_catalog()",
+      "degree": 8
+    },
+    {
+      "id": "backend_src_main_export_pdf",
+      "label": "export_pdf()",
+      "degree": 8
+    }
+  ],
+  "surprises": [
+    {
+      "source": "AppState",
+      "target": "Window",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 5 \u2192 community 2"
+    },
+    {
+      "source": "AppState",
+      "target": "SqlitePool",
+      "source_files": [
+        "backend/src/main.rs",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 5 \u2192 community 6"
+    },
+    {
+      "source": "create_product()",
+      "target": "AppState",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 5 \u2192 community 3"
+    },
+    {
+      "source": "delete_requests()",
+      "target": "AppState",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 5 \u2192 community 4"
+    },
+    {
+      "source": "rate_limit()",
+      "target": "AppState",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 5 \u2192 community 7"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}
