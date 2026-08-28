@@ -1,0 +1,9 @@
+.git
+node_modules
+dist
+backend/target
+data
+test-results
+playwright-report
+graphify-out
+.factory
