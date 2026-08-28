@@ -22,23 +22,71 @@
   generated with the factory Azure image deployment on 2026-08-28; prompt and
   generation metadata are in `assets/src/request-desk.png.json` and the visual
   rationale/provenance is in `.factory/design.md`.
+- Repaired the container path. The original ACR run `chfp` reproduced the
+  failure: `rust:1.85-alpine` could not compile the locked ICU 2.3 dependency
+  graph (it requires Rust 1.88). The Dockerfile now uses Rust 1.88, uses
+  reproducible `npm ci`, and has a `.dockerignore` so local dependencies and
+  build artefacts are not sent to ACR.
+- Repaired two runtime regressions discovered while deploying: SPA fallback now
+  uses `ServeDir::fallback` (nested frontend paths return the shell with 200,
+  not 404), and the Docker dependency-cache stage explicitly refreshes
+  `src/main.rs` so Cargo cannot ship its dummy cache binary. The final ACR log
+  confirms the real server entry point compiled in the second release build.
+- Replaced the fixed 20-request window with a per-first-`X-Forwarded-For` token
+  bucket (20 requests/sec, burst 40). It applies outside the route table to API,
+  static, and SPA-fallback responses, returns 429 plus `Retry-After: 1`, and
+  deliberately exempts `/health`.
 
 ## Verification
 
-Ran successfully:
+Ran successfully after the repair:
 
 ```sh
+npm ci && npm run build
 npm test
 cargo test --manifest-path backend/Cargo.toml
 npm run build
 npm run test:e2e
 ```
 
-The Playwright check runs axe and found no serious or critical violations; it
-also verified title, language, landmark, single h1, console cleanliness, and
-an end-to-end request submission. Direct service checks confirmed request
-creation, authenticated CSV export, deletion, `/health`, and 429 responses
-after a burst.
+`cargo test` runs three tests, including the focused regression that proves a
+nested SPA fallback and `/api/catalog` are each limited using the first
+forwarded-IP value, emit 429 plus `Retry-After`, and leave health probes
+available. `npm run test:e2e` runs two Chromium tests: axe has no
+serious/critical findings; an end-to-end request succeeds; SPA fallback,
+keyboard skip-link and Enter activation, 390px mobile layout, privacy/no
+remote resources, and offline submission messaging are covered.
+
+The final ACR build used the factory command and arguments (run `chfv`):
+
+```sh
+az acr build --registry sociobotregistry \
+  --image sf-client-request-catalog:e99e7264806e --file Dockerfile \
+  --build-arg BUILD_SHA=e99e7264806e68b04db4511d607e2f51f9a20ae1 \
+  --build-arg GIT_SHA=e99e7264806e68b04db4511d607e2f51f9a20ae1 \
+  --build-arg SOURCE_COMMIT=e99e7264806e68b04db4511d607e2f51f9a20ae1 .
+```
+
+It succeeded with image digest
+`sha256:8a078a68fd199bd3c1710f17267e9c9851a55b5f36342fdc8a1e2b30f6c6f4ce`.
+The execution runner has no Docker daemon; equivalent local release-executable
+smoke started with only optional local data-path overrides, served health,
+root, and SPA fallback, and passed `verify-url.sh` with no browser console
+errors. Its 60-request burst produced 12 429s. The final image was then
+verified in the factory Container App runtime: startup logged generated owner
+configuration (without the secret) and port 8080, and `/health` returned the
+exact build SHA.
+
+Live checks against `https://client-request-catalog.sociobot.in` passed:
+
+- `/`, `/privacy`, and `/health` returned 200; health reported
+  `e99e7264806e68b04db4511d607e2f51f9a20ae1`.
+- `verify-url.sh` measured a 685 ms load and reported a title, `lang=en`, one
+  h1, main landmark, no missing image alt text or unnamed buttons, and no
+  console errors; desktop and mobile screenshots are in the recorded evidence.
+- A 360-request burst for one forwarded client returned 231 200s and 129
+  429s. A separate header capture observed 29 429 responses with
+  `Retry-After: 1`.
 
 Lighthouse (local Chrome, desktop baseline): Performance **100**,
 Accessibility **100**, Best Practices **96**, SEO **91**; LCP **1.8 s**, CLS
@@ -47,7 +95,7 @@ Accessibility **100**, Best Practices **96**, SEO **91**; LCP **1.8 s**, CLS
 
 ## Run / deploy
 
-Use `npm install && npm run build && cargo run --manifest-path
+Use `npm ci && npm run build && cargo run --manifest-path
 backend/Cargo.toml` locally. The server defaults to port 8080 and data
 directory `/data`; persist `/data` in the container deployment. The root
 Dockerfile is the deployment build and does not depend on `.git`.
