@@ -11,7 +11,7 @@ email, messages, or a PDF price list.
 
 ## Run locally
 
-Requirements: Node 22+ and Rust 1.85+.
+Requirements: Node 22+ and Rust 1.88+.
 
 ```sh
 npm install

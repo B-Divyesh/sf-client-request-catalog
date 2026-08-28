@@ -15,7 +15,7 @@ use std::{
     env, fs,
     path::PathBuf,
     sync::{Arc, Mutex},
-    time::Instant,
+    time::{Duration as StdDuration, Instant},
 };
 use tower_http::{
     services::{ServeDir, ServeFile},
@@ -31,9 +31,12 @@ struct AppState {
     build_sha: String,
 }
 struct Window {
-    since: Instant,
-    count: u32,
+    updated_at: Instant,
+    tokens: f64,
 }
+
+const RATE_LIMIT_PER_SECOND: f64 = 20.0;
+const RATE_LIMIT_BURST: f64 = 40.0;
 #[derive(Serialize, FromRow)]
 struct Product {
     id: i64,
@@ -138,23 +141,7 @@ async fn main() {
         supplied_owner_code = env::var("OWNER_CODE").is_ok(),
         "runtime configuration ready; owner code is persisted under data directory (never printed)"
     );
-    let api = Router::new()
-        .route("/health", get(health))
-        .route("/api/catalog/:token", get(get_catalog))
-        .route("/api/catalog/:token/requests", post(create_request))
-        .route("/api/admin/overview", get(overview))
-        .route("/api/admin/products", post(create_product))
-        .route("/api/admin/requests", delete(delete_requests))
-        .route("/api/admin/requests/:id", patch(update_status))
-        .route("/api/admin/requests.csv", get(export_csv))
-        .route("/api/admin/requests.pdf", get(export_pdf))
-        .route_layer(middleware::from_fn_with_state(state.clone(), rate_limit));
-    let app = api
-        .fallback_service(
-            ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
-        )
-        .layer(TraceLayer::new_for_http())
-        .with_state(state);
+    let app = app(state, PathBuf::from("dist"));
     let port = env::var("PORT")
         .ok()
         .and_then(|x| x.parse().ok())
@@ -167,6 +154,27 @@ async fn main() {
         .with_graceful_shutdown(shutdown())
         .await
         .expect("serve");
+}
+
+fn app(state: AppState, dist_dir: PathBuf) -> Router {
+    Router::new()
+        .route("/health", get(health))
+        .route("/api/catalog/:token", get(get_catalog))
+        .route("/api/catalog/:token/requests", post(create_request))
+        .route("/api/admin/overview", get(overview))
+        .route("/api/admin/products", post(create_product))
+        .route("/api/admin/requests", delete(delete_requests))
+        .route("/api/admin/requests/:id", patch(update_status))
+        .route("/api/admin/requests.csv", get(export_csv))
+        .route("/api/admin/requests.pdf", get(export_pdf))
+        .fallback_service(
+            ServeDir::new(&dist_dir).fallback(ServeFile::new(dist_dir.join("index.html"))),
+        )
+        // Static assets and SPA fallback are server endpoints too, so apply
+        // the same per-client policy outside the API route table.
+        .layer(middleware::from_fn_with_state(state.clone(), rate_limit))
+        .layer(TraceLayer::new_for_http())
+        .with_state(state)
 }
 async fn shutdown() {
     let _ = tokio::signal::ctrl_c().await;
@@ -185,6 +193,11 @@ async fn init_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
     Ok(())
 }
 async fn rate_limit(State(state): State<AppState>, req: Request, next: Next) -> Response {
+    // Health checks must remain dependable under client traffic. Every other
+    // route, including static files and the SPA fallback, is limited below.
+    if req.uri().path() == "/health" {
+        return with_security_headers(next.run(req).await);
+    }
     let key = req
         .headers()
         .get("x-forwarded-for")
@@ -196,16 +209,22 @@ async fn rate_limit(State(state): State<AppState>, req: Request, next: Next) -> 
     let rejected = {
         let mut limits = state.limiter.lock().expect("rate lock");
         let now = Instant::now();
-        let entry = limits.entry(key).or_insert(Window {
-            since: now,
-            count: 0,
+        limits.retain(|_, window| {
+            now.duration_since(window.updated_at) < StdDuration::from_secs(300)
         });
-        if now.duration_since(entry.since).as_secs() >= 1 {
-            entry.since = now;
-            entry.count = 0;
+        let entry = limits.entry(key).or_insert(Window {
+            updated_at: now,
+            tokens: RATE_LIMIT_BURST,
+        });
+        let elapsed = now.duration_since(entry.updated_at).as_secs_f64();
+        entry.tokens = (entry.tokens + elapsed * RATE_LIMIT_PER_SECOND).min(RATE_LIMIT_BURST);
+        entry.updated_at = now;
+        if entry.tokens < 1.0 {
+            true
+        } else {
+            entry.tokens -= 1.0;
+            false
         }
-        entry.count += 1;
-        entry.count > 20
     };
     if rejected {
         let mut response = (
@@ -216,9 +235,11 @@ async fn rate_limit(State(state): State<AppState>, req: Request, next: Next) -> 
         response
             .headers_mut()
             .insert(header::RETRY_AFTER, HeaderValue::from_static("1"));
-        return response;
+        return with_security_headers(response);
     }
-    let mut response = next.run(req).await;
+    with_security_headers(next.run(req).await)
+}
+fn with_security_headers(mut response: Response) -> Response {
     let headers = response.headers_mut();
     headers.insert(
         "x-content-type-options",
@@ -576,6 +597,33 @@ fn simple_pdf(lines: Vec<String>) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::{body::Body, http::Request};
+    use tempfile::TempDir;
+    use tower::ServiceExt;
+
+    async fn test_state(dir: &TempDir) -> AppState {
+        let db_path = dir.path().join("catalog.sqlite");
+        let db = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect(&format!("sqlite://{}?mode=rwc", db_path.display()))
+            .await
+            .expect("open test sqlite");
+        init_db(&db).await.expect("initialize test sqlite");
+        AppState {
+            db,
+            owner_code: Arc::new("test-owner-code".into()),
+            limiter: Arc::new(Mutex::new(HashMap::new())),
+            build_sha: "test".into(),
+        }
+    }
+
+    fn request(path: &str, client: &str) -> Request<Body> {
+        Request::builder()
+            .uri(path)
+            .header("x-forwarded-for", format!("{client}, 10.0.0.1"))
+            .body(Body::empty())
+            .expect("test request")
+    }
     #[test]
     fn validates_normal_email() {
         assert!(valid_email("hello@example.test"));
@@ -585,5 +633,56 @@ mod tests {
     #[test]
     fn creates_a_valid_pdf_header() {
         assert!(simple_pdf(vec!["one request".into()]).starts_with(b"%PDF-1.4"));
+    }
+    #[tokio::test]
+    async fn rate_limit_covers_api_and_spa_fallback_but_not_health() {
+        let dir = TempDir::new().expect("temporary static directory");
+        fs::write(
+            dir.path().join("index.html"),
+            "<!doctype html><title>test</title>",
+        )
+        .expect("write static test page");
+        let app = app(test_state(&dir).await, dir.path().to_path_buf());
+
+        for _ in 0..RATE_LIMIT_BURST as usize {
+            let response = app
+                .clone()
+                .oneshot(request("/deep/client/link", "198.51.100.11"))
+                .await
+                .expect("SPA fallback response");
+            assert_eq!(response.status(), StatusCode::OK);
+        }
+        let limited = app
+            .clone()
+            .oneshot(request("/deep/client/link", "198.51.100.11"))
+            .await
+            .expect("limited SPA response");
+        assert_eq!(limited.status(), StatusCode::TOO_MANY_REQUESTS);
+        assert_eq!(limited.headers().get(header::RETRY_AFTER).unwrap(), "1");
+
+        for _ in 0..RATE_LIMIT_BURST as usize {
+            let response = app
+                .clone()
+                .oneshot(request("/api/catalog/demo-client", "198.51.100.12"))
+                .await
+                .expect("catalog response");
+            assert_eq!(response.status(), StatusCode::OK);
+        }
+        let limited_api = app
+            .clone()
+            .oneshot(request("/api/catalog/demo-client", "198.51.100.12"))
+            .await
+            .expect("limited API response");
+        assert_eq!(limited_api.status(), StatusCode::TOO_MANY_REQUESTS);
+        assert_eq!(limited_api.headers().get(header::RETRY_AFTER).unwrap(), "1");
+
+        for _ in 0..(RATE_LIMIT_BURST as usize + 2) {
+            let health = app
+                .clone()
+                .oneshot(request("/health", "198.51.100.13"))
+                .await
+                .expect("health response");
+            assert_eq!(health.status(), StatusCode::OK);
+        }
     }
 }
