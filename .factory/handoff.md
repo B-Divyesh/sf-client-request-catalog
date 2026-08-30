@@ -95,8 +95,9 @@ owner code under `/data`, and needs no required environment variable. Read the
 owner code from `/data/owner-code.txt`, open `/owner`, and create a private
 client link. Use `/demo` for the non-persistent sample.
 
-The root Dockerfile is multi-stage, uses `rust:1-slim`, runs as a non-root
-user, accepts `BUILD_SHA`, and does not inspect `.git`.
+The root Dockerfile is multi-stage, uses `rust:1-slim` with its matching Debian
+trixie runtime, runs as a non-root user, accepts `BUILD_SHA`, and does not
+inspect `.git`.
 
 ## Deployment evidence
 

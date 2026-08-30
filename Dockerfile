@@ -18,10 +18,14 @@ COPY backend/src ./src
 # the dependency-cache stage's dummy binary when the real source is older.
 RUN touch src/main.rs && cargo build --release
 
-FROM debian:bookworm-slim
+# rust:1-slim currently builds on Debian trixie. Match its glibc generation in
+# the small runtime stage so the compiled server can start after deployment.
+FROM debian:trixie-slim
 ARG BUILD_SHA=dev
 ENV BUILD_SHA=$BUILD_SHA PORT=8080 DATA_DIR=/data
-RUN groupadd --system catalog && useradd --system --gid catalog --home-dir /app catalog && mkdir -p /data /app/dist && chown -R catalog:catalog /data /app
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libgcc-s1 && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system catalog && useradd --system --gid catalog --home-dir /app catalog \
+    && mkdir -p /data /app/dist && chown -R catalog:catalog /data /app
 COPY --from=builder /app/backend/target/release/client-request-catalog-server /app/server
 COPY --from=web /app/dist /app/dist
 USER catalog
