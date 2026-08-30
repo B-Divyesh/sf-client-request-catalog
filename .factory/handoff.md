@@ -72,7 +72,7 @@ cargo test --manifest-path backend/Cargo.toml
 npm run test:e2e
 ```
 
-- Unit tests: 1 Node test and 5 Rust tests passed.
+- Unit tests: 1 Node test and 6 Rust tests passed.
 - Browser suite: 11 Chromium tests passed. Coverage includes all claims,
   desktop, 390px mobile, keyboard-only use, route focus, light and dark axe,
   reduced-motion CSS, privacy requests, an isolated offline context, metadata,
@@ -120,7 +120,13 @@ After deployment, `https://client-request-catalog.sociobot.in/health` returned
 200 and the full final source commit passed as `BUILD_SHA`. Root, `/demo`,
 `/privacy`, `/terms`, `/robots.txt`, and `/sitemap.xml` returned 200. A missing
 route returned 404. The live `verify-url.sh` check reported one h1, `lang=en`,
-a main landmark, complete alt text, named buttons, and no console errors.
+a main landmark, complete alt text, named buttons, no console errors, and a
+552 ms load. Live light and dark axe checks found no serious or critical
+violations. At 390px, the demo had no horizontal overflow or undersized
+interactive targets. A live sample submission returned `DEMO-0421` with
+`saved: false`; the legacy public token returned 410. A 70-request live burst
+returned 42 successful responses and 28 throttled responses, each with
+`Retry-After: 1`.
 
 ## Known limits
 
