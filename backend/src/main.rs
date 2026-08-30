@@ -159,6 +159,12 @@ async fn main() {
                 Err(problem) => panic!("clear incomplete database: {problem}"),
             }
         }
+        let lock_dir = PathBuf::from(format!("{}.lock", db_path.display()));
+        match fs::remove_dir_all(lock_dir) {
+            Ok(()) => {}
+            Err(problem) if problem.kind() == std::io::ErrorKind::NotFound => {}
+            Err(problem) => panic!("clear incomplete database lock: {problem}"),
+        }
     }
     let db = open_db(&db_path).await.expect("open sqlite");
     if !database_ready {
@@ -240,6 +246,10 @@ async fn open_db(path: &std::path::Path) -> Result<SqlitePool, sqlx::Error> {
     let options = SqliteConnectOptions::from_str(&format!("sqlite://{}", path.display()))?
         .create_if_missing(true)
         .foreign_keys(true)
+        // Azure Files does not provide SQLite-compatible POSIX byte-range
+        // locks. unix-dotfile uses an atomic lock directory on the mounted
+        // share instead; one replica and one connection preserve correctness.
+        .vfs("unix-dotfile")
         // Do not mutate journal_mode during startup. Azure briefly overlaps
         // old and new revisions on the same mounted database during rollout;
         // changing the mode then requires an exclusive lock and prevents boot.

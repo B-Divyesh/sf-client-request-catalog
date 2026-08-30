@@ -12,7 +12,9 @@ All release blockers in independent verification commit
 - The owner workspace creates 40-character random client links, sets a 1–365
   day expiry, copies links, and revokes them without deleting past requests.
 - SQLite uses one pooled connection and a 10-second busy timeout, matching the
-  single-writer constraint of its Azure Files mount.
+  single-writer constraint of its Azure Files mount. The `unix-dotfile` VFS
+  uses an atomic lock directory because the mount does not support SQLite's
+  default byte-range locks.
   Request references come from the inserted row id, removing the `MAX(id) + 1`
   race. A pre-existing database starts without schema writes while Azure
   overlaps revisions. The public legacy token is rejected in routing.
