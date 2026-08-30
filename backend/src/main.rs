@@ -25,7 +25,7 @@ use tower_http::{
     services::{ServeDir, ServeFile},
     trace::TraceLayer,
 };
-use tracing::{error, info, warn};
+use tracing::info;
 
 #[derive(Clone)]
 struct AppState {
@@ -139,14 +139,31 @@ async fn main() {
             }
         },
     };
-    // v1's database was tied to a publicly known seeded credential and can
-    // retain an Azure Files lock after its revision exits. Keep that file
-    // untouched for recovery; repaired deployments use an isolated database.
-    let db_path = PathBuf::from(&data_dir).join("catalog-v2.sqlite");
-    let database_file_existed = db_path.exists();
+    // Rejected revisions left zero-byte SQLite files and hot journals on the
+    // mounted share. Keep them untouched; use a clean, single-connection file.
+    let db_path = PathBuf::from(&data_dir).join("catalog-live.sqlite");
+    let ready_path = PathBuf::from(&data_dir).join("catalog-live.ready");
+    let database_ready = ready_path.exists();
+    if !database_ready {
+        // A crash during first initialization can leave an empty file and hot
+        // journal. No active data exists until the ready marker is written.
+        for candidate in [
+            db_path.clone(),
+            PathBuf::from(format!("{}-journal", db_path.display())),
+            PathBuf::from(format!("{}-wal", db_path.display())),
+            PathBuf::from(format!("{}-shm", db_path.display())),
+        ] {
+            match fs::remove_file(candidate) {
+                Ok(()) => {}
+                Err(problem) if problem.kind() == std::io::ErrorKind::NotFound => {}
+                Err(problem) => panic!("clear incomplete database: {problem}"),
+            }
+        }
+    }
     let db = open_db(&db_path).await.expect("open sqlite");
-    if !database_file_existed {
+    if !database_ready {
         init_db(&db).await.expect("initialize database");
+        fs::write(&ready_path, b"ready\n").expect("mark database initialized");
     }
     let state = AppState {
         db: db.clone(),
@@ -169,9 +186,6 @@ async fn main() {
         .await
         .expect("bind port");
     info!(port, "client request catalog listening");
-    if database_file_existed {
-        tokio::spawn(migrate_existing_db(db));
-    }
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown())
         .await
@@ -237,24 +251,6 @@ async fn open_db(path: &std::path::Path) -> Result<SqlitePool, sqlx::Error> {
         .max_connections(1)
         .connect_with(options)
         .await
-}
-async fn migrate_existing_db(db: SqlitePool) {
-    // Give the platform time to mark this revision ready and drain the prior
-    // process before the first schema write.
-    tokio::time::sleep(StdDuration::from_secs(15)).await;
-    for attempt in 1..=60 {
-        match init_db(&db).await {
-            Ok(()) => {
-                info!(attempt, "existing database migration complete");
-                return;
-            }
-            Err(problem) => {
-                warn!(attempt, error = %problem, "database migration deferred during revision handoff");
-                tokio::time::sleep(StdDuration::from_secs(2)).await;
-            }
-        }
-    }
-    error!("existing database migration did not complete after retries");
 }
 async fn init_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
     for statement in [

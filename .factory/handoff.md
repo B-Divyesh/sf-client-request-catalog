@@ -14,13 +14,13 @@ All release blockers in independent verification commit
 - SQLite uses one pooled connection and a 10-second busy timeout, matching the
   single-writer constraint of its Azure Files mount.
   Request references come from the inserted row id, removing the `MAX(id) + 1`
-  race. A pre-existing database file starts without schema writes while Azure
-  overlaps revisions; a bounded background retry applies the idempotent
-  migration after the prior revision drains. The public legacy token is
-  rejected in routing even before that migration finishes.
-- The repaired release writes active state to `/data/catalog-v2.sqlite`. The
-  rejected release's locked `catalog.sqlite` remains untouched as a quarantine
-  copy; it contained the publicly exposed seeded workspace and verifier data.
+  race. A pre-existing database starts without schema writes while Azure
+  overlaps revisions. The public legacy token is rejected in routing.
+- The repaired release writes active state to `/data/catalog-live.sqlite`.
+  A `catalog-live.ready` marker is written only after initialization completes,
+  so a failed first boot cannot turn a partial database into accepted state.
+  Inspection of the target container showed that the rejected rollout files
+  were zero bytes with 512-byte journals. They remain untouched.
 - Dark-mode primary-action text now uses a dedicated contrast token. Navigation,
   footer links, and demo controls meet the 44px target requirement.
 - Internal route changes focus the destination h1. Errors use live regions,
@@ -98,7 +98,7 @@ cargo run --manifest-path backend/Cargo.toml
 
 The server listens on `PORT` (default 8080), writes SQLite and its generated
 owner code under `/data`, and needs no required environment variable. Active
-state is in `/data/catalog-v2.sqlite`. Read the owner code from
+state is in `/data/catalog-live.sqlite`. Read the owner code from
 `/data/owner-code.txt`, open `/owner`, and create a private client link. Use
 `/demo` for the non-persistent sample.
 
@@ -130,6 +130,6 @@ a main landmark, complete alt text, named buttons, and no console errors.
   offline, so there is no cached-app update flow to manage.
 - No paid tier ships. The prior one-time Plus offer was removed because its
   promised extra-link and branded-receipt features were not implemented.
-- The rejected release's `/data/catalog.sqlite` is retained but not read by the
-  repaired service. It can be archived after the owner confirms that its
-  public-link test requests are not needed.
+- The rejected rollout files `/data/catalog.sqlite*` and
+  `/data/catalog-v2.sqlite*` are retained but not read by the repaired service.
+  They contain no database pages and may be archived later.
