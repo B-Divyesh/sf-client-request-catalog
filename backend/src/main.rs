@@ -139,7 +139,10 @@ async fn main() {
             }
         },
     };
-    let db_path = PathBuf::from(&data_dir).join("catalog.sqlite");
+    // v1's database was tied to a publicly known seeded credential and can
+    // retain an Azure Files lock after its revision exits. Keep that file
+    // untouched for recovery; repaired deployments use an isolated database.
+    let db_path = PathBuf::from(&data_dir).join("catalog-v2.sqlite");
     let database_file_existed = db_path.exists();
     let db = open_db(&db_path).await.expect("open sqlite");
     if !database_file_existed {

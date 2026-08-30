@@ -24,6 +24,10 @@ strong owner code in `/data/owner-code.txt` (or under `DATA_DIR` when set).
 Do not share the owner code with clients. `PORT`, `DATA_DIR`, and `OWNER_CODE`
 are optional overrides.
 
+Repaired deployments store active data in `/data/catalog-v2.sqlite`. The
+legacy `catalog.sqlite` remains untouched because its seeded client credential
+was public in the rejected release.
+
 ## Verify
 
 ```sh

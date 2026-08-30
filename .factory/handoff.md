@@ -6,8 +6,7 @@ All release blockers in independent verification commit
 `215285516ef02da4b4d3407c4ba8d4f7bf5ab904` are repaired.
 
 - `/` is now a product landing page. It does not fetch a catalog or reveal
-  prices. The compromised `demo-client` credential is rotated and expired at
-  startup while its existing requests remain in the inbox.
+  prices. The compromised `demo-client` credential is rejected unconditionally.
 - `/demo` uses fixed sample responses from `/api/demo/*`. It never reads or
   writes SQLite. The persistent banner includes Reset demo and Start for real.
 - The owner workspace creates 40-character random client links, sets a 1–365
@@ -18,6 +17,9 @@ All release blockers in independent verification commit
   overlaps revisions; a bounded background retry applies the idempotent
   migration after the prior revision drains. The public legacy token is
   rejected in routing even before that migration finishes.
+- The repaired release writes active state to `/data/catalog-v2.sqlite`. The
+  rejected release's locked `catalog.sqlite` remains untouched as a quarantine
+  copy; it contained the publicly exposed seeded workspace and verifier data.
 - Dark-mode primary-action text now uses a dedicated contrast token. Navigation,
   footer links, and demo controls meet the 44px target requirement.
 - Internal route changes focus the destination h1. Errors use live regions,
@@ -94,9 +96,10 @@ cargo run --manifest-path backend/Cargo.toml
 ```
 
 The server listens on `PORT` (default 8080), writes SQLite and its generated
-owner code under `/data`, and needs no required environment variable. Read the
-owner code from `/data/owner-code.txt`, open `/owner`, and create a private
-client link. Use `/demo` for the non-persistent sample.
+owner code under `/data`, and needs no required environment variable. Active
+state is in `/data/catalog-v2.sqlite`. Read the owner code from
+`/data/owner-code.txt`, open `/owner`, and create a private client link. Use
+`/demo` for the non-persistent sample.
 
 The root Dockerfile is multi-stage, uses `rust:1-slim` with its matching Debian
 trixie runtime, runs as a non-root user, accepts `BUILD_SHA`, and does not
@@ -126,3 +129,6 @@ a main landmark, complete alt text, named buttons, and no console errors.
   offline, so there is no cached-app update flow to manage.
 - No paid tier ships. The prior one-time Plus offer was removed because its
   promised extra-link and branded-receipt features were not implemented.
+- The rejected release's `/data/catalog.sqlite` is retained but not read by the
+  repaired service. It can be archived after the owner confirms that its
+  public-link test requests are not needed.
