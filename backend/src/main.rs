@@ -10,7 +10,7 @@ use chrono::{Duration, Utc};
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use sqlx::{
-    sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions},
+    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     FromRow, SqlitePool,
 };
 use std::str::FromStr;
@@ -217,7 +217,9 @@ async fn open_db(path: &std::path::Path) -> Result<SqlitePool, sqlx::Error> {
     let options = SqliteConnectOptions::from_str(&format!("sqlite://{}", path.display()))?
         .create_if_missing(true)
         .foreign_keys(true)
-        .journal_mode(SqliteJournalMode::Wal)
+        // Do not mutate journal_mode during startup. Azure briefly overlaps
+        // old and new revisions on the same mounted database during rollout;
+        // changing the mode then requires an exclusive lock and prevents boot.
         .busy_timeout(StdDuration::from_secs(10));
     SqlitePoolOptions::new()
         .max_connections(8)

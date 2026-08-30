@@ -12,8 +12,9 @@ All release blockers in independent verification commit
   writes SQLite. The persistent banner includes Reset demo and Start for real.
 - The owner workspace creates 40-character random client links, sets a 1–365
   day expiry, copies links, and revokes them without deleting past requests.
-- SQLite uses WAL and a 10-second busy timeout. Request references come from
-  the inserted row id, removing the `MAX(id) + 1` race.
+- SQLite uses its deployment-safe journal mode and a 10-second busy timeout.
+  Request references come from the inserted row id, removing the `MAX(id) + 1`
+  race. Startup does not mutate journal mode while Azure overlaps revisions.
 - Dark-mode primary-action text now uses a dedicated contrast token. Navigation,
   footer links, and demo controls meet the 44px target requirement.
 - Internal route changes focus the destination h1. Errors use live regions,
