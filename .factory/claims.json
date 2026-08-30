@@ -1,0 +1,44 @@
+[
+  {
+    "id": "demo-isolated",
+    "claim": "The sample demo saves nothing to the real request inbox.",
+    "where": "landing action, demo banner, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:demo-isolated",
+    "sandbox": "fresh browser context; compare owner inbox count before and after a complete demo submission; assert only demo API routes are called"
+  },
+  {
+    "id": "private-prices",
+    "claim": "Prices require an owner-created opaque client link that can expire or be revoked.",
+    "where": "landing facts, how it works, owner workspace, README",
+    "test": "npm run test:e2e -- --grep @claim:private-prices",
+    "sandbox": "fresh server data; assert root and predictable legacy token reveal no price; create a 40-character link, read its catalog, revoke it, then assert 410"
+  },
+  {
+    "id": "request-inbox",
+    "claim": "A valid client request appears in the owner inbox.",
+    "where": "landing facts, README",
+    "test": "npm run test:e2e -- --grep @claim:request-inbox",
+    "sandbox": "create an opaque client link, submit through the browser, then query the authenticated owner inbox"
+  },
+  {
+    "id": "owner-exports",
+    "claim": "Owners can export requests as CSV and PDF.",
+    "where": "owner workspace, README",
+    "test": "npm run test:e2e -- --grep @claim:owner-exports",
+    "sandbox": "fresh server with sample request; assert CSV header and PDF signature from authenticated export routes"
+  },
+  {
+    "id": "no-trackers",
+    "claim": "The landing and demo flows load no analytics, remote fonts, or tracking scripts.",
+    "where": "landing facts, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:no-trackers",
+    "sandbox": "record every browser request across landing and demo; assert the only origin is the product origin"
+  },
+  {
+    "id": "no-checkout",
+    "claim": "Sending a request does not charge the client, reserve stock, or create a purchase.",
+    "where": "landing boundaries, catalog, terms, README",
+    "test": "npm run test:e2e -- --grep @claim:no-checkout",
+    "sandbox": "submit a sample request while recording requests; assert same-origin request completion and the explicit terms"
+  }
+]

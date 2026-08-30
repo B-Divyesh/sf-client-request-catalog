@@ -18,12 +18,13 @@ rather than like an abandoned checkout.
 | ink | `#182319` | `#f7f1e5` |
 | muted ink | `#536052` | `#c1c9bb` |
 | moss accent | `#285238` | `#9fce99` |
-| clay accent | `#b64b32` | `#ff9a7e` |
+| clay accent | `#a83f29` | `#ff9a7e` |
 | warning | `#8a5700` | `#ffd381` |
 
 The default is light paper; dark mode is a genuine inverted night ledger,
 selected by the system preference. `#182319` on paper and paper on dark meet
-the normal-text contrast requirement.
+the normal-text contrast requirement. Primary actions use moss with a dedicated
+light/dark contrast token, so their text remains above 4.5:1 in both themes.
 
 Typography pairs the self-host-free system **ui-monospace** for labels,
 prices, and metadata (a durable order-pad feel) with **ui-rounded/system
@@ -44,6 +45,10 @@ instant.
 Mobile intentionally becomes a single-column catalogue with the request tray
 in normal flow, so it cannot obscure actions. The dotted texture is CSS and
 decorative; it is absent from the accessibility tree.
+
+The public landing page uses the same trade-print grammar without exposing a
+catalog or prices. The isolated demo adds a bordered ledger notice above the
+catalog, with Reset demo and Start for real kept in that persistent strip.
 
 ## Original illustration plan and provenance
 

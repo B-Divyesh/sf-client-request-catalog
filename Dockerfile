@@ -7,11 +7,9 @@ COPY src ./src
 COPY public ./public
 RUN npm run build
 
-# Cargo.lock resolves ICU 2.3, which has an MSRV of Rust 1.88. Keep this
-# builder in step with the lockfile so the ACR build is reproducible.
-FROM rust:1.88-alpine AS builder
+FROM rust:1-slim AS builder
 WORKDIR /app
-RUN apk add --no-cache musl-dev pkgconfig
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential pkg-config libsqlite3-dev && rm -rf /var/lib/apt/lists/*
 COPY backend/Cargo.toml backend/Cargo.lock* ./backend/
 WORKDIR /app/backend
 RUN mkdir src && printf 'fn main() {}' > src/main.rs && cargo build --release && rm -rf src
@@ -20,10 +18,10 @@ COPY backend/src ./src
 # the dependency-cache stage's dummy binary when the real source is older.
 RUN touch src/main.rs && cargo build --release
 
-FROM alpine:3.22
+FROM debian:bookworm-slim
 ARG BUILD_SHA=dev
 ENV BUILD_SHA=$BUILD_SHA PORT=8080 DATA_DIR=/data
-RUN addgroup -S catalog && adduser -S catalog -G catalog && mkdir -p /data /app/dist && chown -R catalog:catalog /data /app
+RUN groupadd --system catalog && useradd --system --gid catalog --home-dir /app catalog && mkdir -p /data /app/dist && chown -R catalog:catalog /data /app
 COPY --from=builder /app/backend/target/release/client-request-catalog-server /app/server
 COPY --from=web /app/dist /app/dist
 USER catalog

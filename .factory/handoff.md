@@ -1,123 +1,123 @@
-# Client Request Catalog — handoff
+# Client Request Catalog — repair handoff
 
-## Independent verification status — FAIL (2026-08-30)
+## Outcome
 
-Candidate `9baa52cd4c0198d02216cfaac35367d944e361b3` at
-`https://client-request-catalog.sociobot.in` **must not be released**.
-Independent QA found release blockers: `.factory/claims.json` is missing; the
-required one-click isolated demo is absent (`/demo` is the real persisted
-catalog); the predictable default client token publicly exposes priced offers;
-40 concurrent valid submissions produced 8 server errors; and dark mode has
-two serious axe contrast failures. The live health endpoint reports the exact
-candidate SHA. See `.factory/verification.md` for full commands, evidence,
-additional defects, and required repairs. The remainder of this handoff is
-the prior builder report and does not supersede this FAIL verdict.
+All release blockers in independent verification commit
+`215285516ef02da4b4d3407c4ba8d4f7bf5ab904` are repaired.
 
-## Delivered
+- `/` is now a product landing page. It does not fetch a catalog or reveal
+  prices. The compromised `demo-client` credential is rotated and expired at
+  startup while its existing requests remain in the inbox.
+- `/demo` uses fixed sample responses from `/api/demo/*`. It never reads or
+  writes SQLite. The persistent banner includes Reset demo and Start for real.
+- The owner workspace creates 40-character random client links, sets a 1–365
+  day expiry, copies links, and revokes them without deleting past requests.
+- SQLite uses WAL and a 10-second busy timeout. Request references come from
+  the inserted row id, removing the `MAX(id) + 1` race.
+- Dark-mode primary-action text now uses a dedicated contrast token. Navigation,
+  footer links, and demo controls meet the 44px target requirement.
+- Internal route changes focus the destination h1. Errors use live regions,
+  the skip link targets a focusable main landmark, and reduced motion remains
+  supported.
+- Route titles, descriptions, canonical and social metadata, favicon, touch
+  icon, social image, robots, sitemap, real 404 responses, CSP, HSTS, cache
+  policy, and permissions policy are present.
+- The unimplemented $29 Plus promise and license code were removed. This build
+  has no paid tier and makes no monetization claim.
 
-- A dithered two-ink private catalog that supports fixed-price, POA, and
-  repeat-order requests. The seeded link is `/?client=demo-client`; real links
-  are opaque database tokens with an expiry check.
-- A real Rust/axum + SQLite backend: request submission, owner-code-protected
-  inbox, status changes, offer creation, CSV and PDF exports, and a destructive
-  request-data deletion control. Startup generates and persists an owner code
-  if `OWNER_CODE` is not supplied; only a generated/supplied flag is logged.
-- API burst protection keyed to the first `X-Forwarded-For` hop (20 requests
-  per second; response is 429 with `Retry-After`), secure response headers,
-  parameterised SQL, validation, and `/health` with build SHA.
-- `/privacy` and `/terms`, keyboard focus styling, mobile layout, error,
-  empty, loading and offline messaging. No runtime third-party scripts,
-  analytics, or CDN fonts.
-- Paid-unlock wiring for the Sociobot hosted checkout, returned license storage,
-  daily background verification, and restoration. The price is clearly marked
-  as a one-time $29 Plus unlock.
-- Original 132 KB WebP hero art at `public/assets/request-desk.webp`. It was
-  generated with the factory Azure image deployment on 2026-08-28; prompt and
-  generation metadata are in `assets/src/request-desk.png.json` and the visual
-  rationale/provenance is in `.factory/design.md`.
-- Repaired the container path. The original ACR run `chfp` reproduced the
-  failure: `rust:1.85-alpine` could not compile the locked ICU 2.3 dependency
-  graph (it requires Rust 1.88). The Dockerfile now uses Rust 1.88, uses
-  reproducible `npm ci`, and has a `.dockerignore` so local dependencies and
-  build artefacts are not sent to ACR.
-- Repaired two runtime regressions discovered while deploying: SPA fallback now
-  uses `ServeDir::fallback` (nested frontend paths return the shell with 200,
-  not 404), and the Docker dependency-cache stage explicitly refreshes
-  `src/main.rs` so Cargo cannot ship its dummy cache binary. The final ACR log
-  confirms the real server entry point compiled in the second release build.
-- Replaced the fixed 20-request window with a per-first-`X-Forwarded-For` token
-  bucket (20 requests/sec, burst 40). It applies outside the route table to API,
-  static, and SPA-fallback responses, returns 429 plus `Retry-After: 1`, and
-  deliberately exempts `/health`.
+The generated two-ink illustration remains the original product art. Its
+source, prompt, and provenance remain in `assets/src/` and `.factory/design.md`.
 
-## Verification
+## Regression coverage
 
-Ran successfully after the repair:
+`.factory/claims.json` declares six claims. Every listed command passes from
+the isolated `/demo` entry point or the same fresh temporary server:
 
 ```sh
-npm ci && npm run build
+npm run test:e2e -- --grep @claim:demo-isolated
+npm run test:e2e -- --grep @claim:private-prices
+npm run test:e2e -- --grep @claim:request-inbox
+npm run test:e2e -- --grep @claim:owner-exports
+npm run test:e2e -- --grep @claim:no-trackers
+npm run test:e2e -- --grep @claim:no-checkout
+```
+
+Backend regressions include a 40-request concurrent write test. It asserts 40
+successful responses, 40 unique references, and 40 stored rows. A second test
+recreates the legacy public token, runs startup migration, and proves the token
+is revoked without duplicating offers. An additional live local exercise sent
+40 simultaneous valid requests from distinct forwarded IPs and returned
+`{ '200': 40 }`.
+
+## Local verification
+
+The following passed on 2026-08-30:
+
+```sh
+npm ci --ignore-scripts
 npm test
-cargo test --manifest-path backend/Cargo.toml
+npm run check
 npm run build
+cargo fmt --manifest-path backend/Cargo.toml -- --check
+cargo test --manifest-path backend/Cargo.toml
 npm run test:e2e
 ```
 
-`cargo test` runs three tests, including the focused regression that proves a
-nested SPA fallback and `/api/catalog` are each limited using the first
-forwarded-IP value, emit 429 plus `Retry-After`, and leave health probes
-available. `npm run test:e2e` runs two Chromium tests: axe has no
-serious/critical findings; an end-to-end request succeeds; SPA fallback,
-keyboard skip-link and Enter activation, 390px mobile layout, privacy/no
-remote resources, and offline submission messaging are covered.
+- Unit tests: 1 Node test and 5 Rust tests passed.
+- Browser suite: 11 Chromium tests passed. Coverage includes all claims,
+  desktop, 390px mobile, keyboard-only use, route focus, light and dark axe,
+  reduced-motion CSS, privacy requests, an isolated offline context, metadata,
+  404, cache/security headers, and 429 plus Retry-After.
+- Build output: 21.07 KB JavaScript (7.10 KB gzip), 10.22 KB CSS (2.97 KB
+  gzip), 164 KB social image, and 132 KB product illustration.
+- `verify-url.sh` against the release server reported a 583 ms load, one h1,
+  `lang=en`, a main landmark, complete image alt text, named buttons, and no
+  console errors. Evidence is under `/tmp/crc-final-evidence` in the worker.
+- Mobile Lighthouse: Performance 100, Accessibility 100, Best Practices 100,
+  SEO 100; LCP 1.805 s, CLS 0, TBT 0 ms.
+- Local `/health` returned `{"build_sha":"local-repair","ok":true}`. An
+  unknown route returned the app shell with HTTP 404.
 
-The final ACR build used the factory command and arguments (run `chfv`):
+The worker has no Docker or Podman executable. The factory ACR build was used
+as the exact container build check.
+
+## Run and operate
 
 ```sh
-az acr build --registry sociobotregistry \
-  --image sf-client-request-catalog:e99e7264806e --file Dockerfile \
-  --build-arg BUILD_SHA=e99e7264806e68b04db4511d607e2f51f9a20ae1 \
-  --build-arg GIT_SHA=e99e7264806e68b04db4511d607e2f51f9a20ae1 \
-  --build-arg SOURCE_COMMIT=e99e7264806e68b04db4511d607e2f51f9a20ae1 .
+npm ci
+npm run build
+cargo run --manifest-path backend/Cargo.toml
 ```
 
-It succeeded with image digest
-`sha256:8a078a68fd199bd3c1710f17267e9c9851a55b5f36342fdc8a1e2b30f6c6f4ce`.
-The execution runner has no Docker daemon; equivalent local release-executable
-smoke started with only optional local data-path overrides, served health,
-root, and SPA fallback, and passed `verify-url.sh` with no browser console
-errors. Its 60-request burst produced 12 429s. The final image was then
-verified in the factory Container App runtime: startup logged generated owner
-configuration (without the secret) and port 8080, and `/health` returned the
-exact build SHA.
+The server listens on `PORT` (default 8080), writes SQLite and its generated
+owner code under `/data`, and needs no required environment variable. Read the
+owner code from `/data/owner-code.txt`, open `/owner`, and create a private
+client link. Use `/demo` for the non-persistent sample.
 
-Live checks against `https://client-request-catalog.sociobot.in` passed:
+The root Dockerfile is multi-stage, uses `rust:1-slim`, runs as a non-root
+user, accepts `BUILD_SHA`, and does not inspect `.git`.
 
-- `/`, `/privacy`, and `/health` returned 200; health reported
-  `e99e7264806e68b04db4511d607e2f51f9a20ae1`.
-- `verify-url.sh` measured a 685 ms load and reported a title, `lang=en`, one
-  h1, main landmark, no missing image alt text or unnamed buttons, and no
-  console errors; desktop and mobile screenshots are in the recorded evidence.
-- A 360-request burst for one forwarded client returned 231 200s and 129
-  429s. A separate header capture observed 29 429 responses with
-  `Retry-After: 1`.
+## Deployment evidence
 
-Lighthouse (local Chrome, desktop baseline): Performance **100**,
-Accessibility **100**, Best Practices **96**, SEO **91**; LCP **1.8 s**, CLS
-**0**, TBT **20 ms**. Production asset sizes are 14.1 KB JS, 8.0 KB CSS, and
-132 KB hero WebP (all comfortably within the requested budgets).
+The official container deployment ran from the final committed HEAD with
+`WO_DATA_DIR=/data`, Dockerfile `Dockerfile`, and port 8080. ACR completed the
+multi-stage build, and the existing durable `sf-client-request-catalog-data`
+mount remained on `/data` with one replica. No other product service was read
+or changed.
 
-## Run / deploy
+After deployment, `https://client-request-catalog.sociobot.in/health` returned
+200 and the full final source commit passed as `BUILD_SHA`. Root, `/demo`,
+`/privacy`, `/terms`, `/robots.txt`, and `/sitemap.xml` returned 200. A missing
+route returned 404. The live `verify-url.sh` check reported one h1, `lang=en`,
+a main landmark, complete alt text, named buttons, and no console errors.
 
-Use `npm ci && npm run build && cargo run --manifest-path
-backend/Cargo.toml` locally. The server defaults to port 8080 and data
-directory `/data`; persist `/data` in the container deployment. The root
-Dockerfile is the deployment build and does not depend on `.git`.
+## Known limits
 
-## Known gaps / next steps
-
-- This v1 seeds one example client link and business identity. The owner UI has
-  offer creation but not yet a UI for creating or revoking additional client
-  links; the database model already supports distinct expiring tokens.
-- Plus license verification points to the production Sociobot endpoint, as
-  required for release. Switch the base URL to the pilot API only when testing
-  against a registered staging product.
+- A client asks the business to export or delete an individual request. Owners
+  can export the inbox or delete all stored request data; there is no direct
+  client self-service deletion link.
+- The product does not claim offline operation and has no service worker.
+  Already-loaded forms report a clear reconnect message if submission happens
+  offline, so there is no cached-app update flow to manage.
+- No paid tier ships. The prior one-time Plus offer was removed because its
+  promised extra-link and branded-receipt features were not implemented.
