@@ -140,9 +140,9 @@ async fn main() {
         },
     };
     let db_path = PathBuf::from(&data_dir).join("catalog.sqlite");
+    let database_file_existed = db_path.exists();
     let db = open_db(&db_path).await.expect("open sqlite");
-    let existing_schema = has_schema(&db).await.expect("inspect database schema");
-    if !existing_schema {
+    if !database_file_existed {
         init_db(&db).await.expect("initialize database");
     }
     let state = AppState {
@@ -166,7 +166,7 @@ async fn main() {
         .await
         .expect("bind port");
     info!(port, "client request catalog listening");
-    if existing_schema {
+    if database_file_existed {
         tokio::spawn(migrate_existing_db(db));
     }
     axum::serve(listener, app)
@@ -231,14 +231,6 @@ async fn open_db(path: &std::path::Path) -> Result<SqlitePool, sqlx::Error> {
         .max_connections(8)
         .connect_with(options)
         .await
-}
-async fn has_schema(db: &SqlitePool) -> Result<bool, sqlx::Error> {
-    let count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='clients'",
-    )
-    .fetch_one(db)
-    .await?;
-    Ok(count == 1)
 }
 async fn migrate_existing_db(db: SqlitePool) {
     for attempt in 1..=60 {
@@ -913,15 +905,6 @@ mod tests {
         assert!(simple_pdf(vec!["one request".into()]).starts_with(b"%PDF-1.4"));
     }
     #[tokio::test]
-    async fn schema_probe_distinguishes_new_and_existing_databases() {
-        let dir = TempDir::new().expect("temporary app directory");
-        let db_path = dir.path().join("catalog.sqlite");
-        let db = open_db(&db_path).await.expect("open test sqlite");
-        assert!(!has_schema(&db).await.expect("probe new database"));
-        init_db(&db).await.expect("initialize test sqlite");
-        assert!(has_schema(&db).await.expect("probe initialized database"));
-    }
-    #[tokio::test]
     async fn existing_database_serves_health_without_startup_writes() {
         let dir = TempDir::new().expect("temporary app directory");
         let original = test_state(&dir).await;
@@ -934,9 +917,6 @@ mod tests {
         let second_pool = open_db(&dir.path().join("catalog.sqlite"))
             .await
             .expect("open overlapping revision database");
-        assert!(has_schema(&second_pool)
-            .await
-            .expect("read existing schema"));
         let overlapping = AppState {
             db: second_pool,
             owner_code: Arc::new("test-owner-code".into()),

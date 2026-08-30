@@ -14,10 +14,10 @@ All release blockers in independent verification commit
   day expiry, copies links, and revokes them without deleting past requests.
 - SQLite uses its deployment-safe journal mode and a 10-second busy timeout.
   Request references come from the inserted row id, removing the `MAX(id) + 1`
-  race. Existing databases start without schema writes while Azure overlaps
-  revisions; a bounded background retry applies the idempotent migration after
-  the prior revision drains. The public legacy token is rejected in routing
-  even before that migration finishes.
+  race. A pre-existing database file starts without schema writes while Azure
+  overlaps revisions; a bounded background retry applies the idempotent
+  migration after the prior revision drains. The public legacy token is
+  rejected in routing even before that migration finishes.
 - Dark-mode primary-action text now uses a dedicated contrast token. Navigation,
   footer links, and demo controls meet the 44px target requirement.
 - Internal route changes focus the destination h1. Errors use live regions,
