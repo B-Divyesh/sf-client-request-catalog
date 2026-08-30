@@ -1,6 +1,34 @@
 {
   "communities": {
     "0": [
+      "arc",
+      "backend_src_main_appstate",
+      "backend_src_main_create_product",
+      "backend_src_main_create_request",
+      "backend_src_main_delete_requests",
+      "backend_src_main_error",
+      "backend_src_main_export_csv",
+      "backend_src_main_export_pdf",
+      "backend_src_main_get_catalog",
+      "backend_src_main_health",
+      "backend_src_main_overview",
+      "backend_src_main_owner",
+      "backend_src_main_rate_limit",
+      "backend_src_main_update_status",
+      "backend_src_main_with_security_headers",
+      "hashmap",
+      "headermap",
+      "intoresponse",
+      "json",
+      "mutex",
+      "next",
+      "path",
+      "request",
+      "response",
+      "state",
+      "statuscode"
+    ],
+    "1": [
       "src_main",
       "src_main_additem",
       "src_main_api",
@@ -25,7 +53,29 @@
       "src_main_submitrequest",
       "src_main_verifylicense"
     ],
-    "1": [
+    "2": [
+      "backend_src_main",
+      "backend_src_main_app",
+      "backend_src_main_creates_a_valid_pdf_header",
+      "backend_src_main_init_db",
+      "backend_src_main_main",
+      "backend_src_main_rate_limit_covers_api_and_spa_fallback_but_not_health",
+      "backend_src_main_request",
+      "backend_src_main_shutdown",
+      "backend_src_main_test_state",
+      "backend_src_main_valid_email",
+      "backend_src_main_validates_normal_email",
+      "backend_src_main_window",
+      "body",
+      "error",
+      "instant",
+      "pathbuf",
+      "result",
+      "router",
+      "sqlitepool",
+      "tempdir"
+    ],
+    "3": [
       "axe_core_playwright",
       "package",
       "package_devdependencies",
@@ -45,10 +95,8 @@
       "typescript",
       "vite"
     ],
-    "2": [
-      "backend_src_main",
+    "4": [
       "backend_src_main_catalog",
-      "backend_src_main_creates_a_valid_pdf_header",
       "backend_src_main_inboxrow",
       "backend_src_main_product",
       "backend_src_main_productinput",
@@ -56,94 +104,56 @@
       "backend_src_main_requestitem",
       "backend_src_main_simple_pdf",
       "backend_src_main_statusinput",
-      "backend_src_main_valid_email",
-      "backend_src_main_validates_normal_email",
-      "backend_src_main_window",
-      "instant",
       "option",
       "string",
       "vec"
     ],
-    "3": [
-      "backend_src_main_app",
-      "backend_src_main_init_db",
-      "backend_src_main_main",
-      "backend_src_main_rate_limit_covers_api_and_spa_fallback_but_not_health",
-      "backend_src_main_request",
-      "backend_src_main_shutdown",
-      "backend_src_main_test_state",
-      "body",
-      "error",
-      "pathbuf",
-      "result",
-      "router",
-      "sqlitepool",
-      "tempdir"
-    ],
-    "4": [
-      "backend_src_main_create_product",
-      "backend_src_main_delete_requests",
-      "backend_src_main_export_csv",
-      "backend_src_main_export_pdf",
-      "backend_src_main_overview",
-      "backend_src_main_owner",
-      "headermap",
-      "state"
-    ],
     "5": [
-      "backend_src_main_create_request",
-      "backend_src_main_error",
-      "backend_src_main_get_catalog",
-      "backend_src_main_update_status",
-      "json",
-      "path",
-      "statuscode"
+      "factory_qa_backend_temp",
+      "factory_qa_backend_temp_baserequest",
+      "factory_qa_backend_temp_call",
+      "factory_qa_backend_temp_ownercode",
+      "factory_qa_backend_temp_postrequest",
+      "factory_qa_backend_temp_results",
+      "factory_qa_backend_temp_summary"
     ],
     "6": [
-      "arc",
-      "backend_src_main_appstate",
-      "backend_src_main_health",
-      "hashmap",
-      "intoresponse",
-      "mutex"
+      "factory_qa_live_temp",
+      "factory_qa_live_temp_auditpage",
+      "factory_qa_live_temp_consoleerrors",
+      "factory_qa_live_temp_pageerrors",
+      "factory_qa_live_temp_requests",
+      "factory_qa_live_temp_results"
     ],
     "7": [
-      "backend_src_main_rate_limit",
-      "backend_src_main_with_security_headers",
-      "next",
-      "request",
-      "response"
-    ],
-    "8": [
       "e2e_catalog_spec"
     ],
-    "9": [
+    "8": [
       "pkg_client_request_catalog_server"
     ],
-    "10": [
+    "9": [
       "playwright_config"
     ],
-    "11": [
+    "10": [
       "tests_client_test"
     ],
-    "12": [
+    "11": [
       "vite_config"
     ]
   },
   "cohesion": {
-    "0": 0.18972332015810275,
-    "1": 0.1111111111111111,
-    "2": 0.21323529411764705,
-    "3": 0.15384615384615385,
-    "4": 0.5714285714285714,
-    "5": 0.5238095238095238,
+    "0": 0.2246153846153846,
+    "1": 0.18972332015810275,
+    "2": 0.14210526315789473,
+    "3": 0.1111111111111111,
+    "4": 0.2909090909090909,
+    "5": 0.3333333333333333,
     "6": 0.3333333333333333,
-    "7": 0.5,
+    "7": 1.0,
     "8": 1.0,
     "9": 1.0,
     "10": 1.0,
-    "11": 1.0,
-    "12": 1.0
+    "11": 1.0
   },
   "gods": [
     {
@@ -187,71 +197,38 @@
       "degree": 9
     },
     {
-      "id": "backend_src_main_rate_limit",
-      "label": "rate_limit()",
+      "id": "backend_src_main_delete_requests",
+      "label": "delete_requests()",
       "degree": 8
     },
     {
-      "id": "backend_src_main_get_catalog",
-      "label": "get_catalog()",
+      "id": "backend_src_main_export_pdf",
+      "label": "export_pdf()",
       "degree": 8
     }
   ],
   "surprises": [
     {
-      "source": "AppState",
-      "target": "String",
+      "source": "Overview",
+      "target": "InboxRow",
       "source_files": [
         "backend/src/main.rs",
-        ""
+        "backend/src/main.rs"
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
-      "note": "Bridges community 2 \u2192 community 6"
+      "note": "Bridges community 4 \u2192 community 0"
     },
     {
       "source": "create_request()",
-      "target": "String",
+      "target": "valid_email()",
       "source_files": [
         "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 2 \u2192 community 5"
-    },
-    {
-      "source": "Overview",
-      "target": "String",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 2 \u2192 community 4"
-    },
-    {
-      "source": "create_product()",
-      "target": "Json",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
+        "backend/src/main.rs"
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
-      "note": "Bridges community 5 \u2192 community 4"
-    },
-    {
-      "source": "health()",
-      "target": "Json",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "calls",
-      "note": "Bridges community 5 \u2192 community 6"
+      "note": "Bridges community 2 \u2192 community 0"
     }
   ],
   "tokens": {
