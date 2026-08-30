@@ -11,7 +11,8 @@ All release blockers in independent verification commit
   writes SQLite. The persistent banner includes Reset demo and Start for real.
 - The owner workspace creates 40-character random client links, sets a 1–365
   day expiry, copies links, and revokes them without deleting past requests.
-- SQLite uses its deployment-safe journal mode and a 10-second busy timeout.
+- SQLite uses one pooled connection and a 10-second busy timeout, matching the
+  single-writer constraint of its Azure Files mount.
   Request references come from the inserted row id, removing the `MAX(id) + 1`
   race. A pre-existing database file starts without schema writes while Azure
   overlaps revisions; a bounded background retry applies the idempotent

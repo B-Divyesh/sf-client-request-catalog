@@ -231,11 +231,17 @@ async fn open_db(path: &std::path::Path) -> Result<SqlitePool, sqlx::Error> {
         // changing the mode then requires an exclusive lock and prevents boot.
         .busy_timeout(StdDuration::from_secs(10));
     SqlitePoolOptions::new()
-        .max_connections(8)
+        // The production database lives on a single-replica Azure Files
+        // mount. One connection avoids SMB byte-range lock contention while
+        // still allowing Tokio callers to queue safely.
+        .max_connections(1)
         .connect_with(options)
         .await
 }
 async fn migrate_existing_db(db: SqlitePool) {
+    // Give the platform time to mark this revision ready and drain the prior
+    // process before the first schema write.
+    tokio::time::sleep(StdDuration::from_secs(15)).await;
     for attempt in 1..=60 {
         match init_db(&db).await {
             Ok(()) => {
@@ -251,7 +257,14 @@ async fn migrate_existing_db(db: SqlitePool) {
     error!("existing database migration did not complete after retries");
 }
 async fn init_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
-    sqlx::query("PRAGMA foreign_keys = ON; CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY, name TEXT NOT NULL, token TEXT NOT NULL UNIQUE, expires_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL, price_cents INTEGER, currency TEXT NOT NULL DEFAULT 'USD', stock_note TEXT NOT NULL DEFAULT '', visible INTEGER NOT NULL DEFAULT 1); CREATE TABLE IF NOT EXISTS requests (id INTEGER PRIMARY KEY, reference TEXT NOT NULL UNIQUE, client_id INTEGER NOT NULL, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT, client_reference TEXT, note TEXT, status TEXT NOT NULL DEFAULT 'new', created_at TEXT NOT NULL, FOREIGN KEY(client_id) REFERENCES clients(id)); CREATE TABLE IF NOT EXISTS request_items (request_id INTEGER NOT NULL, product_id INTEGER NOT NULL, quantity INTEGER NOT NULL, FOREIGN KEY(request_id) REFERENCES requests(id), FOREIGN KEY(product_id) REFERENCES products(id));").execute(db).await?;
+    for statement in [
+        "CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY, name TEXT NOT NULL, token TEXT NOT NULL UNIQUE, expires_at TEXT NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL, price_cents INTEGER, currency TEXT NOT NULL DEFAULT 'USD', stock_note TEXT NOT NULL DEFAULT '', visible INTEGER NOT NULL DEFAULT 1)",
+        "CREATE TABLE IF NOT EXISTS requests (id INTEGER PRIMARY KEY, reference TEXT NOT NULL UNIQUE, client_id INTEGER NOT NULL, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT, client_reference TEXT, note TEXT, status TEXT NOT NULL DEFAULT 'new', created_at TEXT NOT NULL, FOREIGN KEY(client_id) REFERENCES clients(id))",
+        "CREATE TABLE IF NOT EXISTS request_items (request_id INTEGER NOT NULL, product_id INTEGER NOT NULL, quantity INTEGER NOT NULL, FOREIGN KEY(request_id) REFERENCES requests(id), FOREIGN KEY(product_id) REFERENCES products(id))",
+    ] {
+        sqlx::query(statement).execute(db).await?;
+    }
     // The original predictable demo credential was publicly shipped. Rotate
     // and expire it while preserving any requests already attached to it.
     sqlx::query("UPDATE clients SET token=?, expires_at=? WHERE token='demo-client'")
