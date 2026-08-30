@@ -1,5 +1,18 @@
 # Client Request Catalog — handoff
 
+## Independent verification status — FAIL (2026-08-30)
+
+Candidate `9baa52cd4c0198d02216cfaac35367d944e361b3` at
+`https://client-request-catalog.sociobot.in` **must not be released**.
+Independent QA found release blockers: `.factory/claims.json` is missing; the
+required one-click isolated demo is absent (`/demo` is the real persisted
+catalog); the predictable default client token publicly exposes priced offers;
+40 concurrent valid submissions produced 8 server errors; and dark mode has
+two serious axe contrast failures. The live health endpoint reports the exact
+candidate SHA. See `.factory/verification.md` for full commands, evidence,
+additional defects, and required repairs. The remainder of this handoff is
+the prior builder report and does not supersede this FAIL verdict.
+
 ## Delivered
 
 - A dithered two-ink private catalog that supports fixed-price, POA, and
