@@ -25,7 +25,7 @@ use tower_http::{
     services::{ServeDir, ServeFile},
     trace::TraceLayer,
 };
-use tracing::info;
+use tracing::{error, info, warn};
 
 #[derive(Clone)]
 struct AppState {
@@ -141,9 +141,12 @@ async fn main() {
     };
     let db_path = PathBuf::from(&data_dir).join("catalog.sqlite");
     let db = open_db(&db_path).await.expect("open sqlite");
-    init_db(&db).await.expect("initialize database");
+    let existing_schema = has_schema(&db).await.expect("inspect database schema");
+    if !existing_schema {
+        init_db(&db).await.expect("initialize database");
+    }
     let state = AppState {
-        db,
+        db: db.clone(),
         owner_code: Arc::new(owner_code),
         limiter: Arc::new(Mutex::new(HashMap::new())),
         build_sha: env::var("BUILD_SHA").unwrap_or_else(|_| "dev".into()),
@@ -163,6 +166,9 @@ async fn main() {
         .await
         .expect("bind port");
     info!(port, "client request catalog listening");
+    if existing_schema {
+        tokio::spawn(migrate_existing_db(db));
+    }
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown())
         .await
@@ -225,6 +231,29 @@ async fn open_db(path: &std::path::Path) -> Result<SqlitePool, sqlx::Error> {
         .max_connections(8)
         .connect_with(options)
         .await
+}
+async fn has_schema(db: &SqlitePool) -> Result<bool, sqlx::Error> {
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='clients'",
+    )
+    .fetch_one(db)
+    .await?;
+    Ok(count == 1)
+}
+async fn migrate_existing_db(db: SqlitePool) {
+    for attempt in 1..=60 {
+        match init_db(&db).await {
+            Ok(()) => {
+                info!(attempt, "existing database migration complete");
+                return;
+            }
+            Err(problem) => {
+                warn!(attempt, error = %problem, "database migration deferred during revision handoff");
+                tokio::time::sleep(StdDuration::from_secs(2)).await;
+            }
+        }
+    }
+    error!("existing database migration did not complete after retries");
 }
 async fn init_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
     sqlx::query("PRAGMA foreign_keys = ON; CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY, name TEXT NOT NULL, token TEXT NOT NULL UNIQUE, expires_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL, price_cents INTEGER, currency TEXT NOT NULL DEFAULT 'USD', stock_note TEXT NOT NULL DEFAULT '', visible INTEGER NOT NULL DEFAULT 1); CREATE TABLE IF NOT EXISTS requests (id INTEGER PRIMARY KEY, reference TEXT NOT NULL UNIQUE, client_id INTEGER NOT NULL, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT, client_reference TEXT, note TEXT, status TEXT NOT NULL DEFAULT 'new', created_at TEXT NOT NULL, FOREIGN KEY(client_id) REFERENCES clients(id)); CREATE TABLE IF NOT EXISTS request_items (request_id INTEGER NOT NULL, product_id INTEGER NOT NULL, quantity INTEGER NOT NULL, FOREIGN KEY(request_id) REFERENCES requests(id), FOREIGN KEY(product_id) REFERENCES products(id));").execute(db).await?;
@@ -346,6 +375,12 @@ async fn health(State(state): State<AppState>) -> impl IntoResponse {
     Json(serde_json::json!({"ok":true,"build_sha":state.build_sha}))
 }
 async fn get_catalog(State(state): State<AppState>, Path(token): Path<String>) -> Response {
+    if token == "demo-client" {
+        return error(
+            StatusCode::GONE,
+            "This client link has expired or is not valid.",
+        );
+    }
     let client = sqlx::query_as::<_, (i64, String, String)>(
         "SELECT id,name,expires_at FROM clients WHERE token=? AND expires_at > ?",
     )
@@ -419,6 +454,12 @@ async fn create_request(
     Path(token): Path<String>,
     Json(input): Json<RequestInput>,
 ) -> Response {
+    if token == "demo-client" {
+        return error(
+            StatusCode::GONE,
+            "This client link has expired or is not valid.",
+        );
+    }
     if let Some(response) = validate_request(&input) {
         return response;
     }
@@ -547,7 +588,7 @@ async fn overview(State(state): State<AppState>, headers: HeaderMap) -> Response
     let products = sqlx::query_as::<_, Product>("SELECT id,name,description,price_cents,currency,stock_note,visible FROM products ORDER BY id DESC").fetch_all(&state.db).await.unwrap_or_default();
     let requests = sqlx::query_as::<_, InboxRow>("SELECT r.id,r.reference,r.name,r.email,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' × ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id GROUP BY r.id ORDER BY r.id DESC").fetch_all(&state.db).await.unwrap_or_default();
     let clients = sqlx::query_as::<_, ClientLink>(
-        "SELECT id,name,token,expires_at FROM clients ORDER BY id DESC",
+        "SELECT id,name,token,expires_at FROM clients WHERE token <> 'demo-client' AND token NOT LIKE 'revoked-%' ORDER BY id DESC",
     )
     .fetch_all(&state.db)
     .await
@@ -870,6 +911,45 @@ mod tests {
     #[test]
     fn creates_a_valid_pdf_header() {
         assert!(simple_pdf(vec!["one request".into()]).starts_with(b"%PDF-1.4"));
+    }
+    #[tokio::test]
+    async fn schema_probe_distinguishes_new_and_existing_databases() {
+        let dir = TempDir::new().expect("temporary app directory");
+        let db_path = dir.path().join("catalog.sqlite");
+        let db = open_db(&db_path).await.expect("open test sqlite");
+        assert!(!has_schema(&db).await.expect("probe new database"));
+        init_db(&db).await.expect("initialize test sqlite");
+        assert!(has_schema(&db).await.expect("probe initialized database"));
+    }
+    #[tokio::test]
+    async fn existing_database_serves_health_without_startup_writes() {
+        let dir = TempDir::new().expect("temporary app directory");
+        let original = test_state(&dir).await;
+        let mut write = original.db.begin().await.expect("begin old revision write");
+        sqlx::query("UPDATE products SET stock_note=stock_note WHERE id=1")
+            .execute(&mut *write)
+            .await
+            .expect("hold old revision write transaction");
+
+        let second_pool = open_db(&dir.path().join("catalog.sqlite"))
+            .await
+            .expect("open overlapping revision database");
+        assert!(has_schema(&second_pool)
+            .await
+            .expect("read existing schema"));
+        let overlapping = AppState {
+            db: second_pool,
+            owner_code: Arc::new("test-owner-code".into()),
+            limiter: Arc::new(Mutex::new(HashMap::new())),
+            build_sha: "overlap-test".into(),
+            not_found_html: Arc::new(String::new()),
+        };
+        let response = app(overlapping, dir.path().to_path_buf())
+            .oneshot(request("/health", "198.51.100.91"))
+            .await
+            .expect("health response during overlap");
+        assert_eq!(response.status(), StatusCode::OK);
+        write.rollback().await.expect("release old revision lock");
     }
     #[tokio::test]
     async fn legacy_public_token_is_revoked_without_duplicate_offers() {
