@@ -311,8 +311,8 @@
       "degree": 16
     },
     {
-      "id": "backend_src_main_authstate",
-      "label": "AuthState",
+      "id": "src_main_shell",
+      "label": "shell()",
       "degree": 14
     },
     {
@@ -326,8 +326,8 @@
       "degree": 14
     },
     {
-      "id": "src_main_shell",
-      "label": "shell()",
+      "id": "backend_src_main_authstate",
+      "label": "AuthState",
       "degree": 14
     },
     {
@@ -336,55 +336,44 @@
       "degree": 13
     },
     {
-      "id": "tsconfig_compileroptions",
-      "label": "compilerOptions",
+      "id": "backend_src_main_export_single_csv",
+      "label": "export_single_csv()",
       "degree": 12
     }
   ],
   "surprises": [
     {
-      "source": "AppState",
-      "target": "Arc",
+      "source": "business_name()",
+      "target": "AppState",
       "source_files": [
         "backend/src/main.rs",
-        ""
+        "backend/src/main.rs"
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
-      "note": "Bridges community 6 \u2192 community 2"
+      "note": "Bridges community 0 \u2192 community 2"
     },
     {
-      "source": "Overview",
-      "target": "HeaderMap",
+      "source": "main()",
+      "target": "load_owner_configuration()",
       "source_files": [
         "backend/src/main.rs",
-        ""
+        "backend/src/main.rs"
       ],
       "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 2 \u2192 community 0"
-    },
-    {
-      "source": "open_db()",
-      "target": "Path",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 2 \u2192 community 4"
-    },
-    {
-      "source": "init_db()",
-      "target": "Error",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
+      "relation": "calls",
       "note": "Bridges community 0 \u2192 community 4"
+    },
+    {
+      "source": "AuthState",
+      "target": "TestIdentity",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 0 \u2192 community 6"
     },
     {
       "source": "replace_client_offers()",
@@ -396,6 +385,17 @@
       "confidence": "EXTRACTED",
       "relation": "references",
       "note": "Bridges community 0 \u2192 community 10"
+    },
+    {
+      "source": "create_client()",
+      "target": "replace_client_offers()",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 10 \u2192 community 2"
     }
   ],
   "tokens": {
