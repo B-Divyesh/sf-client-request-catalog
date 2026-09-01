@@ -1,3 +1,25 @@
+# Client Request Catalog — verification follow-up
+
+## Independent verification result (2026-09-01)
+
+**FAIL — do not release `eee5eec1a1688ceaef0ac9e4865340709449d394`.** The
+deployment at `https://client-request-catalog.sociobot.in` does match this
+commit and passes all declared claims, unit/integration/browser suites,
+accessibility checks, privacy request-log checks, mobile checks, header/cache
+checks, Lighthouse, and rate-limit checks. Details are in
+`.factory/verification-2.md`.
+
+Two brief-level release blockers remain:
+
+- Separate client links expose the same complete offer list; the product has
+  no client-specific offer visibility or assignment control.
+- The owner cannot export or delete an individual request. Whole-inbox export
+  and whole-inbox deletion do not provide the required GDPR-style path.
+
+Implement and test those two capabilities, then re-verify before release.
+
+---
+
 # Client Request Catalog — repair handoff
 
 ## Outcome
