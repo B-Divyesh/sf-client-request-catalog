@@ -4,19 +4,26 @@
       "arc",
       "backend_src_main_appstate",
       "backend_src_main_create_client",
+      "backend_src_main_create_demo_request",
       "backend_src_main_create_product",
       "backend_src_main_create_request",
+      "backend_src_main_csv_response",
+      "backend_src_main_delete_request",
       "backend_src_main_delete_requests",
       "backend_src_main_error",
       "backend_src_main_export_csv",
       "backend_src_main_export_pdf",
+      "backend_src_main_export_single_csv",
       "backend_src_main_get_catalog",
       "backend_src_main_health",
       "backend_src_main_not_found",
       "backend_src_main_owner",
       "backend_src_main_rate_limit",
+      "backend_src_main_replace_client_offers",
       "backend_src_main_revoke_client",
+      "backend_src_main_set_client_offers",
       "backend_src_main_update_status",
+      "backend_src_main_validate_request",
       "backend_src_main_with_security_headers",
       "hashmap",
       "headermap",
@@ -27,8 +34,10 @@
       "path",
       "request",
       "response",
+      "sqlite",
       "state",
-      "statuscode"
+      "statuscode",
+      "transaction"
     ],
     "1": [
       "axe_core_playwright",
@@ -67,6 +76,7 @@
       "src_main_basket",
       "src_main_catalog",
       "src_main_clientlink",
+      "src_main_download",
       "src_main_esc",
       "src_main_focusrouteheading",
       "src_main_inboxrow",
@@ -88,32 +98,6 @@
       "src_main_submitrequest"
     ],
     "3": [
-      "backend_src_main",
-      "backend_src_main_catalog",
-      "backend_src_main_clientinput",
-      "backend_src_main_clientlink",
-      "backend_src_main_create_demo_request",
-      "backend_src_main_creates_a_valid_pdf_header",
-      "backend_src_main_demo_catalog",
-      "backend_src_main_get_demo_catalog",
-      "backend_src_main_inboxrow",
-      "backend_src_main_overview",
-      "backend_src_main_product",
-      "backend_src_main_productinput",
-      "backend_src_main_requestinput",
-      "backend_src_main_requestitem",
-      "backend_src_main_simple_pdf",
-      "backend_src_main_statusinput",
-      "backend_src_main_valid_email",
-      "backend_src_main_validate_request",
-      "backend_src_main_validates_normal_email",
-      "backend_src_main_window",
-      "instant",
-      "option",
-      "string",
-      "vec"
-    ],
-    "4": [
       "ref_dom",
       "ref_dom_iterable",
       "ref_e2e",
@@ -136,28 +120,63 @@
       "tsconfig_compileroptions_usedefineforclassfields",
       "tsconfig_include"
     ],
-    "5": [
-      "backend_src_main_app",
-      "backend_src_main_existing_database_serves_health_without_startup_writes",
-      "backend_src_main_forty_concurrent_valid_requests_are_all_saved_once",
+    "4": [
+      "backend_src_main",
+      "backend_src_main_creates_a_valid_pdf_header",
+      "backend_src_main_demo_catalog",
+      "backend_src_main_get_demo_catalog",
       "backend_src_main_init_db",
       "backend_src_main_legacy_public_token_is_revoked_without_duplicate_offers",
       "backend_src_main_main",
-      "backend_src_main_open_db",
+      "backend_src_main_migrate_db",
+      "backend_src_main_offerassignmentinput",
       "backend_src_main_random_token",
+      "backend_src_main_shutdown",
+      "backend_src_main_valid_email",
+      "backend_src_main_validates_normal_email"
+    ],
+    "5": [
+      "backend_src_main_app",
+      "backend_src_main_client_offer_assignments_keep_catalogs_and_request_validation_separate",
+      "backend_src_main_existing_database_serves_health_without_startup_writes",
+      "backend_src_main_forty_concurrent_valid_requests_are_all_saved_once",
+      "backend_src_main_individual_request_export_and_deletion_keep_other_people_and_audit_safe",
+      "backend_src_main_open_db",
       "backend_src_main_rate_limit_covers_api_and_404_routes_but_not_health",
       "backend_src_main_request",
-      "backend_src_main_shutdown",
       "backend_src_main_test_state",
       "body",
-      "error",
       "pathbuf",
-      "result",
       "router",
-      "sqlitepool",
       "tempdir"
     ],
     "6": [
+      "backend_src_main_catalog",
+      "backend_src_main_clientinput",
+      "backend_src_main_clientlinkrow",
+      "backend_src_main_product",
+      "backend_src_main_productinput",
+      "backend_src_main_requestinput",
+      "backend_src_main_requestitem",
+      "backend_src_main_simple_pdf",
+      "backend_src_main_statusinput",
+      "option",
+      "string"
+    ],
+    "7": [
+      "backend_src_main_client_links",
+      "backend_src_main_clientlink",
+      "backend_src_main_inboxrow",
+      "backend_src_main_overview",
+      "backend_src_main_request_rows",
+      "backend_src_main_validated_offer_ids",
+      "backend_src_main_visible_offer_ids",
+      "error",
+      "result",
+      "sqlitepool",
+      "vec"
+    ],
+    "8": [
       "factory_qa_backend_temp",
       "factory_qa_backend_temp_baserequest",
       "factory_qa_backend_temp_call",
@@ -166,7 +185,7 @@
       "factory_qa_backend_temp_results",
       "factory_qa_backend_temp_summary"
     ],
-    "7": [
+    "9": [
       "factory_qa_live_temp",
       "factory_qa_live_temp_auditpage",
       "factory_qa_live_temp_consoleerrors",
@@ -174,63 +193,75 @@
       "factory_qa_live_temp_requests",
       "factory_qa_live_temp_results"
     ],
-    "8": [
+    "10": [
       "e2e_catalog_spec",
       "e2e_catalog_spec_clientip",
       "e2e_catalog_spec_ownerheaders"
     ],
-    "9": [
-      "eslint_config"
-    ],
-    "10": [
-      "pkg_client_request_catalog_server"
-    ],
     "11": [
-      "playwright_config"
+      "backend_src_main_window",
+      "instant"
     ],
     "12": [
-      "tests_client_test"
+      "eslint_config"
     ],
     "13": [
+      "pkg_client_request_catalog_server"
+    ],
+    "14": [
+      "playwright_config"
+    ],
+    "15": [
+      "tests_client_test"
+    ],
+    "16": [
       "vite_config"
     ]
   },
   "cohesion": {
-    "0": 0.2222222222222222,
+    "0": 0.18468468468468469,
     "1": 0.07407407407407407,
-    "2": 0.16307692307692306,
-    "3": 0.18478260869565216,
-    "4": 0.09523809523809523,
-    "5": 0.16374269005847952,
-    "6": 0.3333333333333333,
-    "7": 0.3333333333333333,
-    "8": 0.6666666666666666,
-    "9": 1.0,
-    "10": 1.0,
+    "2": 0.15669515669515668,
+    "3": 0.09523809523809523,
+    "4": 0.23076923076923078,
+    "5": 0.24358974358974358,
+    "6": 0.2545454545454545,
+    "7": 0.38181818181818183,
+    "8": 0.3333333333333333,
+    "9": 0.3333333333333333,
+    "10": 0.6666666666666666,
     "11": 1.0,
     "12": 1.0,
-    "13": 1.0
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0
   },
   "gods": [
     {
       "id": "backend_src_main_appstate",
       "label": "AppState",
-      "degree": 23
+      "degree": 26
     },
     {
       "id": "backend_src_main_error",
       "label": "error()",
-      "degree": 16
+      "degree": 21
     },
     {
       "id": "backend_src_main_overview",
       "label": "Overview",
-      "degree": 13
+      "degree": 15
     },
     {
-      "id": "src_main_shell",
-      "label": "shell()",
-      "degree": 12
+      "id": "backend_src_main_owner",
+      "label": "owner()",
+      "degree": 14
+    },
+    {
+      "id": "backend_src_main_create_client",
+      "label": "create_client()",
+      "degree": 13
     },
     {
       "id": "tsconfig_compileroptions",
@@ -238,64 +269,81 @@
       "degree": 12
     },
     {
-      "id": "backend_src_main_owner",
-      "label": "owner()",
+      "id": "backend_src_main_set_client_offers",
+      "label": "set_client_offers()",
+      "degree": 12
+    },
+    {
+      "id": "backend_src_main_test_state",
+      "label": "test_state()",
+      "degree": 12
+    },
+    {
+      "id": "src_main_shell",
+      "label": "shell()",
+      "degree": 12
+    },
+    {
+      "id": "backend_src_main_export_single_csv",
+      "label": "export_single_csv()",
       "degree": 11
-    },
-    {
-      "id": "backend_src_main_create_client",
-      "label": "create_client()",
-      "degree": 10
-    },
-    {
-      "id": "backend_src_main_create_request",
-      "label": "create_request()",
-      "degree": 10
-    },
-    {
-      "id": "backend_src_main_update_status",
-      "label": "update_status()",
-      "degree": 10
-    },
-    {
-      "id": "backend_src_main_create_product",
-      "label": "create_product()",
-      "degree": 9
     }
   ],
   "surprises": [
     {
-      "source": "app()",
-      "target": "AppState",
-      "source_files": [
-        "backend/src/main.rs",
-        "backend/src/main.rs"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 0 \u2192 community 5"
-    },
-    {
-      "source": "AppState",
-      "target": "Window",
-      "source_files": [
-        "backend/src/main.rs",
-        "backend/src/main.rs"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 0 \u2192 community 3"
-    },
-    {
-      "source": "random_token()",
-      "target": "String",
+      "source": "Overview",
+      "target": "HeaderMap",
       "source_files": [
         "backend/src/main.rs",
         ""
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
-      "note": "Bridges community 3 \u2192 community 5"
+      "note": "Bridges community 0 \u2192 community 7"
+    },
+    {
+      "source": "get_demo_catalog()",
+      "target": "Json",
+      "source_files": [
+        "backend/src/main.rs",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 0 \u2192 community 4"
+    },
+    {
+      "source": "open_db()",
+      "target": "Path",
+      "source_files": [
+        "backend/src/main.rs",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 0 \u2192 community 5"
+    },
+    {
+      "source": "InboxRow",
+      "target": "Option",
+      "source_files": [
+        "backend/src/main.rs",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 6 \u2192 community 7"
+    },
+    {
+      "source": "validate_request()",
+      "target": "Option",
+      "source_files": [
+        "backend/src/main.rs",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 6 \u2192 community 0"
     }
   ],
   "tokens": {
