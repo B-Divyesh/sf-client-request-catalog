@@ -136,7 +136,8 @@ footer > span:last-child { display: flex; align-items: center; gap: 8px; flex-wr
   align-items: center;
   padding: 58px 0 65px;
 }
-.mast img, .landing-hero img { width: 100%; height: auto; box-shadow: 10px 10px 0 var(--moss); filter: saturate(.88); }
+.mast picture, .landing-hero picture { display: block; min-width: 0; }
+.mast img, .landing-hero img { display: block; width: 100%; height: auto; box-shadow: 10px 10px 0 var(--moss); filter: saturate(.88); }
 .eyebrow {
   font: 700 12px/1.2 ui-monospace, SFMono-Regular, monospace;
   letter-spacing: .09em;
@@ -225,6 +226,13 @@ textarea { resize: vertical; }
 .submit { margin-top: 18px; background: var(--moss); border-color: var(--moss); color: var(--accent-contrast); }
 .form-message { min-height: 24px; color: var(--moss); font-weight: 650; margin: 14px 0 0; }
 .button-outline { background: transparent; color: var(--ink); }
+.billing-terms-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-block: 8px;
+}
+.signed-in-as { color: var(--muted); font-size: 14px; }
 
 .empty, .loading, .owner-login, .legal, .not-found { padding: 80px 0; max-width: 720px; }
 .empty { min-height: 260px; }
@@ -267,7 +275,7 @@ code { display: block; font: 13px ui-monospace, SFMono-Regular, monospace; overf
   .site-head nav { gap: 2px; flex-direction: column; text-align: right; }
   .demo-banner { margin: 10px 18px 0; align-items: flex-start; flex-direction: column; }
   .mast, .landing-hero { grid-template-columns: 1fr; gap: 20px; padding: 30px 0 38px; }
-  .mast img { order: -1; }
+  .mast picture { order: -1; }
   .landing-hero img { order: 0; max-height: 210px; object-fit: cover; }
   .hero-actions { align-items: flex-start; gap: 12px; }
   .plain-facts { margin-top: 18px; }

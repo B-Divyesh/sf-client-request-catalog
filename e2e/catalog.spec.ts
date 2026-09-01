@@ -1,15 +1,16 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
 
-const passphrase = 'e2e owner passphrase';
+const authToken = 'e2e-test-entra-token';
 let ip = 100;
-const ownerHeaders = () => ({ 'x-owner-passphrase': passphrase, 'x-forwarded-for': '198.51.100.' + ip++ });
+const ownerHeaders = () => ({ authorization: `Bearer ${authToken}`, 'x-forwarded-for': '198.51.100.' + ip++ });
 const clientIp = (page: Page, suffix: number) => page.setExtraHTTPHeaders({ 'x-forwarded-for': '198.51.100.' + suffix });
+const authenticateOwnerPage = (page: Page) => page.addInitScript(token => sessionStorage.setItem('crc-test-auth-token', token), authToken);
 
 async function ensureWorkspace(request: APIRequestContext) {
-  const status = await request.get('/api/setup', { headers: { 'x-forwarded-for': '198.51.100.' + ip++ } });
+  const status = await request.get('/api/setup', { headers: ownerHeaders() });
   if (!(await status.json() as { claimed: boolean }).claimed) {
-    expect((await request.post('/api/setup', { headers: { 'x-forwarded-for': '198.51.100.' + ip++ }, data: { business_name: 'E2E Repair Catalog', owner_passphrase: passphrase } })).status()).toBe(200);
+    expect((await request.post('/api/setup', { headers: ownerHeaders(), data: { business_name: 'E2E Repair Catalog' } })).status()).toBe(200);
   }
   const overview = await request.get('/api/admin/overview', { headers: ownerHeaders() });
   const products = (await overview.json()).products as unknown[];
@@ -19,15 +20,17 @@ async function ensureWorkspace(request: APIRequestContext) {
 }
 
 test('@claim:owner-onboarding first-run setup brands a real catalog', async ({ page, request }) => {
-  expect((await (await request.get('/api/setup', { headers: { 'x-forwarded-for': '198.51.100.1' } })).json()).claimed).toBe(false);
+  expect((await request.get('/api/setup', { headers: { 'x-forwarded-for': '198.51.100.1' } })).status()).toBe(401);
+  expect((await (await request.get('/api/setup', { headers: ownerHeaders() })).json()).claimed).toBe(false);
+  await authenticateOwnerPage(page);
   await page.goto('/demo');
   await expect(page.getByRole('link', { name: 'Start for real' })).toHaveAttribute('href', '/owner');
   await page.getByRole('link', { name: 'Start for real' }).click();
   await expect(page.getByRole('heading', { name: 'Create your private owner workspace' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in with Microsoft' })).toHaveCount(0);
+  await expect(page.locator('input[type="password"]')).toHaveCount(0);
   await expect(page.locator('input[name="offer_ids"]')).toHaveCount(0);
   await page.locator('input[name="business_name"]').fill('Cedar Repair Co.');
-  await page.locator('input[name="owner_passphrase"]').fill(passphrase);
-  await page.locator('input[name="confirm_passphrase"]').fill(passphrase);
   await page.getByRole('button', { name: 'Create owner workspace' }).click();
   await page.locator('#product-form input[name="name"]').fill('Quarterly maintenance visit');
   await page.locator('#product-form textarea[name="description"]').fill('A careful service visit.');
@@ -141,6 +144,65 @@ test('@claim:no-trackers and @claim:no-checkout use no third-party request', asy
   await page.getByRole('button', { name: /send request/i }).click();
   await expect(page.locator('#form-message')).toContainText('Sample request');
   expect([...origins]).toEqual(['http://127.0.0.1:8123']);
+});
+
+test('@claim:entra-owner-auth owner identity uses Sociobot Entra and mobile billing target is at least 44px', async ({ page, request }) => {
+  const configResponse = await request.get('/api/auth/config', { headers: { 'x-forwarded-for': '198.51.100.81' } });
+  expect(configResponse.status()).toBe(200);
+  const config = await configResponse.json() as { authority: string; client_id: string; redirect_uri: string };
+  expect(config).toMatchObject({
+    authority: 'https://sociobotcustomers.ciamlogin.com/35c6fe40-0ec0-46b6-98c6-213ad4de6650/',
+    client_id: '25c704f4-465a-47af-80ab-2c489466b697',
+    redirect_uri: '/auth/callback'
+  });
+  const unauthorized = await request.get('/api/admin/overview', {
+    headers: { 'x-owner-passphrase': 'legacy local password', 'x-forwarded-for': '198.51.100.82' }
+  });
+  expect(unauthorized.status()).toBe(401);
+  expect(unauthorized.headers()['www-authenticate']).toBe('Bearer');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/owner');
+  await expect(page.locator('input[type="password"]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Sign in with Microsoft' })).toBeVisible();
+  const termsBox = await page.getByRole('link', { name: 'Read plan and billing terms' }).boundingBox();
+  expect(termsBox).not.toBeNull();
+  expect(termsBox!.width).toBeGreaterThanOrEqual(44);
+  expect(termsBox!.height).toBeGreaterThanOrEqual(44);
+
+  const outbound = page.waitForRequest(item => new URL(item.url()).hostname === 'sociobotcustomers.ciamlogin.com');
+  await page.getByRole('button', { name: 'Sign in with Microsoft' }).click();
+  const requestToEntra = await outbound;
+  expect(requestToEntra.url()).toContain('/35c6fe40-0ec0-46b6-98c6-213ad4de6650/');
+});
+
+test('mobile landing uses the small hero and keeps auth work off the main route', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const session = await page.context().newCDPSession(page);
+  await session.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  await page.addInitScript(() => {
+    (window as typeof window & { __crcLongTasks: number }).__crcLongTasks = 0;
+    new PerformanceObserver(list => {
+      const measured = list.getEntries().reduce((total, entry) => total + Math.max(0, entry.duration - 50), 0);
+      (window as typeof window & { __crcLongTasks: number }).__crcLongTasks += measured;
+    }).observe({ type: 'longtask', buffered: true });
+  });
+  await page.goto('/');
+  await page.waitForTimeout(250);
+  const hero = page.locator('.landing-hero img');
+  await expect(hero).toBeVisible();
+  expect(await hero.evaluate((image: HTMLImageElement) => new URL(image.currentSrc).pathname)).toBe('/assets/request-desk-480.avif');
+  const metrics = await page.evaluate(() => ({
+    longTaskBlockingMs: (window as typeof window & { __crcLongTasks: number }).__crcLongTasks,
+    heroBytes: performance.getEntriesByType('resource')
+      .filter(entry => entry.name.endsWith('/assets/request-desk-480.avif'))
+      .reduce((total, entry) => total + (entry as PerformanceResourceTiming).encodedBodySize, 0),
+    loadedAuthChunk: performance.getEntriesByType('resource').some(entry => /\/auth-[^/]+\.js$/.test(new URL(entry.name).pathname))
+  }));
+  expect(metrics.heroBytes).toBeGreaterThan(0);
+  expect(metrics.heroBytes).toBeLessThan(15_000);
+  expect(metrics.longTaskBlockingMs).toBeLessThan(100);
+  expect(metrics.loadedAuthChunk).toBe(false);
 });
 
 test('desktop/mobile keyboard, accessibility, offline, metadata and limits pass', async ({ page, request, browser }) => {

@@ -1,7 +1,3 @@
-use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
-    Argon2,
-};
 use axum::{
     extract::{Path, Request, State},
     http::{header, HeaderMap, HeaderValue, StatusCode},
@@ -11,6 +7,7 @@ use axum::{
     Json, Router,
 };
 use chrono::{Duration, Utc};
+use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use sqlx::{
@@ -29,16 +26,97 @@ use tower_http::{
     services::{ServeDir, ServeFile},
     trace::TraceLayer,
 };
-use tracing::info;
+use tracing::{info, warn};
 
 #[derive(Clone)]
 struct AppState {
     db: SqlitePool,
-    owner_password_hash: Arc<Mutex<Option<String>>>,
+    owner_oid: Arc<Mutex<Option<String>>>,
     business_name: Arc<Mutex<Option<String>>>,
+    auth: AuthState,
     limiter: Arc<Mutex<HashMap<String, Window>>>,
     build_sha: String,
     not_found_html: Arc<String>,
+}
+
+const DEFAULT_ENTRA_TENANT_ID: &str = "35c6fe40-0ec0-46b6-98c6-213ad4de6650";
+const DEFAULT_ENTRA_TENANT_SUBDOMAIN: &str = "sociobotcustomers";
+const DEFAULT_ENTRA_CLIENT_ID: &str = "25c704f4-465a-47af-80ab-2c489466b697";
+
+#[derive(Clone)]
+struct AuthState {
+    tenant_id: String,
+    tenant_subdomain: String,
+    client_id: String,
+    metadata: Arc<Mutex<Option<CachedOidc>>>,
+    http: reqwest::Client,
+    test_identity: Option<TestIdentity>,
+}
+
+#[derive(Clone)]
+struct CachedOidc {
+    issuer: String,
+    keys: HashMap<String, DecodingKey>,
+    fetched_at: Instant,
+}
+
+#[derive(Clone)]
+struct TestIdentity {
+    token: String,
+    oid: String,
+}
+
+#[derive(Deserialize)]
+struct OidcDiscovery {
+    issuer: String,
+    jwks_uri: String,
+}
+
+#[derive(Deserialize)]
+struct JwksDocument {
+    keys: Vec<JwkDocument>,
+}
+
+#[derive(Deserialize)]
+struct JwkDocument {
+    kid: String,
+    kty: String,
+    n: String,
+    e: String,
+    alg: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct EntraClaims {
+    tid: String,
+    oid: String,
+}
+
+#[derive(Serialize)]
+struct AuthConfigResponse {
+    authority: String,
+    client_id: String,
+    redirect_uri: String,
+    test_mode: bool,
+}
+
+#[derive(Clone, Copy)]
+struct AuthFailure {
+    status: StatusCode,
+    message: &'static str,
+    bearer_challenge: bool,
+}
+
+impl IntoResponse for AuthFailure {
+    fn into_response(self) -> Response {
+        let mut response = error(self.status, self.message);
+        if self.bearer_challenge {
+            response
+                .headers_mut()
+                .insert(header::WWW_AUTHENTICATE, HeaderValue::from_static("Bearer"));
+        }
+        response
+    }
 }
 struct Window {
     updated_at: Instant,
@@ -48,7 +126,7 @@ struct Window {
 const PUBLIC_RATE_PER_SECOND: f64 = 20.0;
 const PUBLIC_RATE_BURST: f64 = 40.0;
 // Mutating catalog endpoints are intentionally tighter than reads. Owner
-// routes verify a passphrase, so they receive the smallest allowance.
+// routes verify an Entra token, so they receive the smallest allowance.
 const WRITE_RATE_PER_SECOND: f64 = 8.0;
 const WRITE_RATE_BURST: f64 = 16.0;
 const OWNER_RATE_PER_SECOND: f64 = 4.0;
@@ -143,18 +221,130 @@ struct Overview {
 #[derive(Deserialize)]
 struct SetupInput {
     business_name: String,
-    owner_passphrase: String,
 }
 #[derive(Deserialize)]
 struct SettingsInput {
     business_name: Option<String>,
-    owner_passphrase: Option<String>,
 }
 #[derive(Serialize, FromRow)]
 struct DeletionAuditRow {
     request_id: i64,
     action: String,
     deleted_at: String,
+}
+
+impl AuthState {
+    fn from_env() -> Self {
+        let tenant_id =
+            env::var("ENTRA_TENANT_ID").unwrap_or_else(|_| DEFAULT_ENTRA_TENANT_ID.to_owned());
+        let tenant_subdomain = env::var("ENTRA_TENANT_SUBDOMAIN")
+            .unwrap_or_else(|_| DEFAULT_ENTRA_TENANT_SUBDOMAIN.to_owned());
+        let client_id =
+            env::var("ENTRA_CLIENT_ID").unwrap_or_else(|_| DEFAULT_ENTRA_CLIENT_ID.to_owned());
+        let test_identity = if env::var("APP_ENV").as_deref() == Ok("test") {
+            env::var("AUTH_TEST_TOKEN").ok().map(|token| TestIdentity {
+                token,
+                oid: env::var("AUTH_TEST_OID").unwrap_or_else(|_| "test-owner-oid".to_owned()),
+            })
+        } else {
+            None
+        };
+        Self {
+            tenant_id,
+            tenant_subdomain,
+            client_id,
+            metadata: Arc::new(Mutex::new(None)),
+            http: reqwest::Client::builder()
+                .timeout(StdDuration::from_secs(10))
+                .build()
+                .expect("build OIDC client"),
+            test_identity,
+        }
+    }
+
+    #[cfg(test)]
+    fn for_test(token: &str, oid: &str) -> Self {
+        Self {
+            tenant_id: DEFAULT_ENTRA_TENANT_ID.to_owned(),
+            tenant_subdomain: DEFAULT_ENTRA_TENANT_SUBDOMAIN.to_owned(),
+            client_id: DEFAULT_ENTRA_CLIENT_ID.to_owned(),
+            metadata: Arc::new(Mutex::new(None)),
+            http: reqwest::Client::new(),
+            test_identity: Some(TestIdentity {
+                token: token.to_owned(),
+                oid: oid.to_owned(),
+            }),
+        }
+    }
+
+    fn authority(&self) -> String {
+        format!(
+            "https://{}.ciamlogin.com/{}/",
+            self.tenant_subdomain, self.tenant_id
+        )
+    }
+
+    fn discovery_url(&self) -> String {
+        format!("{}v2.0/.well-known/openid-configuration", self.authority())
+    }
+
+    async fn refresh(&self, force: bool) -> Result<(), String> {
+        if !force
+            && self
+                .metadata
+                .lock()
+                .expect("auth metadata lock")
+                .as_ref()
+                .is_some_and(|cached| cached.fetched_at.elapsed() < StdDuration::from_secs(60 * 60))
+        {
+            return Ok(());
+        }
+        let discovery = self
+            .http
+            .get(self.discovery_url())
+            .send()
+            .await
+            .map_err(|problem| format!("load OIDC discovery: {problem}"))?
+            .error_for_status()
+            .map_err(|problem| format!("OIDC discovery status: {problem}"))?
+            .json::<OidcDiscovery>()
+            .await
+            .map_err(|problem| format!("read OIDC discovery: {problem}"))?;
+        if !discovery.issuer.starts_with("https://") || !discovery.jwks_uri.starts_with("https://")
+        {
+            return Err("OIDC discovery returned a non-HTTPS endpoint".to_owned());
+        }
+        let jwks = self
+            .http
+            .get(&discovery.jwks_uri)
+            .send()
+            .await
+            .map_err(|problem| format!("load OIDC signing keys: {problem}"))?
+            .error_for_status()
+            .map_err(|problem| format!("OIDC signing-key status: {problem}"))?
+            .json::<JwksDocument>()
+            .await
+            .map_err(|problem| format!("read OIDC signing keys: {problem}"))?;
+        let keys = jwks
+            .keys
+            .into_iter()
+            .filter(|key| key.kty == "RSA" && key.alg.as_deref().is_none_or(|alg| alg == "RS256"))
+            .filter_map(|key| {
+                DecodingKey::from_rsa_components(&key.n, &key.e)
+                    .ok()
+                    .map(|decoding_key| (key.kid, decoding_key))
+            })
+            .collect::<HashMap<_, _>>();
+        if keys.is_empty() {
+            return Err("OIDC discovery returned no RS256 signing keys".to_owned());
+        }
+        *self.metadata.lock().expect("auth metadata lock") = Some(CachedOidc {
+            issuer: discovery.issuer,
+            keys,
+            fetched_at: Instant::now(),
+        });
+        Ok(())
+    }
 }
 
 #[tokio::main]
@@ -200,20 +390,30 @@ async fn main() {
     migrate_db(&db)
         .await
         .expect("apply compatible database migrations");
-    let (owner_password_hash, business_name) = load_owner_configuration(&db)
+    let (owner_oid, business_name) = load_owner_configuration(&db)
         .await
         .expect("load owner configuration");
+    let auth = AuthState::from_env();
+    if auth.test_identity.is_none() {
+        if let Err(problem) = auth.refresh(true).await {
+            warn!(%problem, "Entra discovery unavailable at startup; owner sign-in will retry on demand");
+        }
+    }
     let state = AppState {
         db: db.clone(),
-        owner_password_hash: Arc::new(Mutex::new(owner_password_hash)),
+        owner_oid: Arc::new(Mutex::new(owner_oid)),
         business_name: Arc::new(Mutex::new(business_name)),
+        auth,
         limiter: Arc::new(Mutex::new(HashMap::new())),
         build_sha: env::var("BUILD_SHA").unwrap_or_else(|_| "dev".into()),
         not_found_html: Arc::new(String::new()),
     };
     info!(
-        owner_workspace_claimed = state.owner_password_hash.lock().expect("owner state lock").is_some(),
-        "runtime configuration ready; first owner setup is available when the workspace is unclaimed"
+        owner_workspace_claimed = state.owner_oid.lock().expect("owner state lock").is_some(),
+        entra_tenant_subdomain = %state.auth.tenant_subdomain,
+        entra_client_id_source = if env::var("ENTRA_CLIENT_ID").is_ok() { "supplied" } else { "default" },
+        test_auth_enabled = state.auth.test_identity.is_some(),
+        "runtime configuration ready; owner identity uses Sociobot Microsoft Entra External ID"
     );
     let app = app(state, PathBuf::from("dist"));
     let port = env::var("PORT")
@@ -237,6 +437,7 @@ fn app(mut state: AppState, dist_dir: PathBuf) -> Router {
     }));
     Router::new()
         .route("/health", get(health))
+        .route("/api/auth/config", get(auth_config))
         .route("/api/setup", get(setup_status).post(claim_workspace))
         .route("/api/demo/catalog", get(get_demo_catalog))
         .route("/api/demo/requests", post(create_demo_request))
@@ -263,6 +464,7 @@ fn app(mut state: AppState, dist_dir: PathBuf) -> Router {
         .route_service("/", ServeFile::new(&index))
         .route_service("/demo", ServeFile::new(&index))
         .route_service("/owner", ServeFile::new(&index))
+        .route_service("/auth/callback", ServeFile::new(&index))
         .route_service("/privacy", ServeFile::new(&index))
         .route_service("/terms", ServeFile::new(&index))
         .route_service("/404.html", ServeFile::new(&index))
@@ -362,19 +564,23 @@ async fn migrate_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
             .await?;
         tx.commit().await?;
     }
+    // Password ownership is intentionally retired. Existing catalog data and
+    // branding remain, but a verified Entra user must claim the owner role.
+    sqlx::query("DELETE FROM settings WHERE key='owner_password_hash'")
+        .execute(db)
+        .await?;
     Ok(())
 }
 async fn load_owner_configuration(
     db: &SqlitePool,
 ) -> Result<(Option<String>, Option<String>), sqlx::Error> {
-    let owner_password_hash =
-        sqlx::query_scalar("SELECT value FROM settings WHERE key='owner_password_hash'")
-            .fetch_optional(db)
-            .await?;
+    let owner_oid = sqlx::query_scalar("SELECT value FROM settings WHERE key='owner_oid'")
+        .fetch_optional(db)
+        .await?;
     let business_name = sqlx::query_scalar("SELECT value FROM settings WHERE key='business_name'")
         .fetch_optional(db)
         .await?;
-    Ok((owner_password_hash, business_name))
+    Ok((owner_oid, business_name))
 }
 async fn rate_limit(State(state): State<AppState>, req: Request, next: Next) -> Response {
     // Health checks must remain dependable under client traffic. Every other
@@ -442,7 +648,7 @@ fn with_security_headers(mut response: Response, immutable: bool) -> Response {
     headers.insert("x-frame-options", HeaderValue::from_static("DENY"));
     headers.insert(
         "content-security-policy",
-        HeaderValue::from_static("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"),
+        HeaderValue::from_static("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self' https://sociobotcustomers.ciamlogin.com; frame-src https://sociobotcustomers.ciamlogin.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"),
     );
     headers.insert(
         "strict-transport-security",
@@ -472,15 +678,135 @@ async fn not_found(State(state): State<AppState>) -> Response {
 async fn health(State(state): State<AppState>) -> impl IntoResponse {
     Json(serde_json::json!({"ok":true,"build_sha":state.build_sha}))
 }
-async fn setup_status(State(state): State<AppState>) -> Response {
-    let claimed = state
-        .owner_password_hash
-        .lock()
-        .expect("owner state lock")
-        .is_some();
-    Json(serde_json::json!({"claimed":claimed})).into_response()
+async fn auth_config(State(state): State<AppState>) -> Response {
+    Json(AuthConfigResponse {
+        authority: state.auth.authority(),
+        client_id: state.auth.client_id.clone(),
+        redirect_uri: "/auth/callback".to_owned(),
+        test_mode: state.auth.test_identity.is_some(),
+    })
+    .into_response()
 }
-async fn claim_workspace(State(state): State<AppState>, Json(input): Json<SetupInput>) -> Response {
+
+async fn authenticate(state: &AppState, headers: &HeaderMap) -> Result<String, AuthFailure> {
+    let Some(token) = headers
+        .get(header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "))
+        .filter(|value| !value.is_empty())
+    else {
+        return Err(auth_error(
+            "Sign in with Microsoft to open the owner workspace.",
+        ));
+    };
+    if let Some(identity) = &state.auth.test_identity {
+        return if token == identity.token {
+            Ok(identity.oid.clone())
+        } else {
+            Err(auth_error("The Microsoft sign-in token is not valid."))
+        };
+    }
+    if let Err(problem) = state.auth.refresh(false).await {
+        warn!(%problem, "could not refresh Entra signing keys");
+        return Err(auth_error(
+            "Microsoft sign-in could not be verified. Try again.",
+        ));
+    }
+    let token_header = decode_header(token)
+        .map_err(|_| auth_error("The Microsoft sign-in token is not valid."))?;
+    if token_header.alg != Algorithm::RS256 {
+        return Err(auth_error("The Microsoft sign-in token is not valid."));
+    }
+    let Some(kid) = token_header.kid else {
+        return Err(auth_error("The Microsoft sign-in token is not valid."));
+    };
+    let mut cached = state
+        .auth
+        .metadata
+        .lock()
+        .expect("auth metadata lock")
+        .clone();
+    let key_missing = cached
+        .as_ref()
+        .is_none_or(|metadata| !metadata.keys.contains_key(&kid));
+    let refresh_unknown_key = cached
+        .as_ref()
+        .is_none_or(|metadata| metadata.fetched_at.elapsed() >= StdDuration::from_secs(5 * 60));
+    if key_missing && refresh_unknown_key {
+        if let Err(problem) = state.auth.refresh(true).await {
+            warn!(%problem, "could not reload Entra signing keys");
+            return Err(auth_error(
+                "Microsoft sign-in could not be verified. Try again.",
+            ));
+        }
+        cached = state
+            .auth
+            .metadata
+            .lock()
+            .expect("auth metadata lock")
+            .clone();
+    }
+    let Some(metadata) = cached else {
+        return Err(auth_error(
+            "Microsoft sign-in could not be verified. Try again.",
+        ));
+    };
+    let Some(key) = metadata.keys.get(&kid) else {
+        return Err(auth_error("The Microsoft sign-in token is not valid."));
+    };
+    let mut validation = Validation::new(Algorithm::RS256);
+    validation.set_audience(&[state.auth.client_id.as_str()]);
+    validation.set_issuer(&[metadata.issuer.as_str()]);
+    validation.validate_nbf = true;
+    validation.leeway = 60;
+    let claims = decode::<EntraClaims>(token, key, &validation)
+        .map_err(|_| auth_error("The Microsoft sign-in token is not valid."))?
+        .claims;
+    if claims.tid != state.auth.tenant_id || claims.oid.trim().is_empty() {
+        return Err(auth_error("The Microsoft sign-in token is not valid."));
+    }
+    Ok(claims.oid)
+}
+
+async fn authorize_owner(state: &AppState, headers: &HeaderMap) -> Result<String, AuthFailure> {
+    let oid = authenticate(state, headers).await?;
+    let configured = state.owner_oid.lock().expect("owner state lock").clone();
+    match configured {
+        Some(owner_oid) if owner_oid == oid => Ok(oid),
+        Some(_) => Err(AuthFailure {
+            status: StatusCode::FORBIDDEN,
+            message: "This owner workspace belongs to another Microsoft account.",
+            bearer_challenge: false,
+        }),
+        None => Err(AuthFailure {
+            status: StatusCode::FORBIDDEN,
+            message: "Claim this owner workspace before using owner tools.",
+            bearer_challenge: false,
+        }),
+    }
+}
+
+async fn setup_status(State(state): State<AppState>, headers: HeaderMap) -> Response {
+    let oid = match authenticate(&state, &headers).await {
+        Ok(oid) => oid,
+        Err(response) => return response.into_response(),
+    };
+    let configured = state.owner_oid.lock().expect("owner state lock").clone();
+    Json(serde_json::json!({
+        "claimed": configured.is_some(),
+        "owned_by_you": configured.as_deref() == Some(oid.as_str())
+    }))
+    .into_response()
+}
+async fn claim_workspace(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(input): Json<SetupInput>,
+) -> Response {
+    let oid = match authenticate(&state, &headers).await {
+        Ok(oid) => oid,
+        Err(response) => return response.into_response(),
+    };
     let business_name = input.business_name.trim();
     if business_name.is_empty() || business_name.len() > 120 {
         return error(
@@ -488,32 +814,12 @@ async fn claim_workspace(State(state): State<AppState>, Json(input): Json<SetupI
             "Enter a business name up to 120 characters.",
         );
     }
-    if !valid_passphrase(&input.owner_passphrase) {
-        return error(
-            StatusCode::BAD_REQUEST,
-            "Use an owner passphrase with at least 12 characters.",
-        );
-    }
-    if state
-        .owner_password_hash
-        .lock()
-        .expect("owner state lock")
-        .is_some()
-    {
+    if state.owner_oid.lock().expect("owner state lock").is_some() {
         return error(
             StatusCode::CONFLICT,
             "This workspace has already been claimed.",
         );
     }
-    let password_hash = match hash_passphrase(&input.owner_passphrase) {
-        Ok(value) => value,
-        Err(_) => {
-            return error(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Could not secure this workspace.",
-            )
-        }
-    };
     let mut tx = match state.db.begin().await {
         Ok(tx) => tx,
         Err(_) => {
@@ -524,7 +830,7 @@ async fn claim_workspace(State(state): State<AppState>, Json(input): Json<SetupI
         }
     };
     let existing: Option<String> =
-        match sqlx::query_scalar("SELECT value FROM settings WHERE key='owner_password_hash'")
+        match sqlx::query_scalar("SELECT value FROM settings WHERE key='owner_oid'")
             .fetch_optional(&mut *tx)
             .await
         {
@@ -542,14 +848,16 @@ async fn claim_workspace(State(state): State<AppState>, Json(input): Json<SetupI
             "This workspace has already been claimed.",
         );
     }
-    if sqlx::query(
-        "INSERT INTO settings (key,value) VALUES ('owner_password_hash',?),('business_name',?)",
-    )
-    .bind(&password_hash)
-    .bind(business_name)
-    .execute(&mut *tx)
-    .await
-    .is_err()
+    if sqlx::query("INSERT INTO settings (key,value) VALUES ('owner_oid',?)")
+        .bind(&oid)
+        .execute(&mut *tx)
+        .await
+        .is_err()
+        || sqlx::query("INSERT INTO settings (key,value) VALUES ('business_name',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value")
+            .bind(business_name)
+            .execute(&mut *tx)
+            .await
+            .is_err()
         || tx.commit().await.is_err()
     {
         return error(
@@ -557,7 +865,7 @@ async fn claim_workspace(State(state): State<AppState>, Json(input): Json<SetupI
             "Could not create this workspace.",
         );
     }
-    *state.owner_password_hash.lock().expect("owner state lock") = Some(password_hash);
+    *state.owner_oid.lock().expect("owner state lock") = Some(oid);
     *state.business_name.lock().expect("business state lock") = Some(business_name.into());
     Json(serde_json::json!({"ok":true,"business_name":business_name})).into_response()
 }
@@ -798,8 +1106,8 @@ fn validate_request(input: &RequestInput) -> Option<Response> {
     None
 }
 async fn overview(State(state): State<AppState>, headers: HeaderMap) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     let products = sqlx::query_as::<_, Product>("SELECT id,name,description,price_cents,currency,stock_note,visible FROM products ORDER BY id DESC").fetch_all(&state.db).await.unwrap_or_default();
     let requests = request_rows(&state.db, None).await.unwrap_or_default();
@@ -822,8 +1130,8 @@ async fn update_settings(
     headers: HeaderMap,
     Json(input): Json<SettingsInput>,
 ) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     let name = input.business_name.map(|value| value.trim().to_owned());
     if name
@@ -835,34 +1143,9 @@ async fn update_settings(
             "Enter a business name up to 120 characters.",
         );
     }
-    if input
-        .owner_passphrase
-        .as_deref()
-        .is_some_and(|value| !valid_passphrase(value))
-    {
-        return error(
-            StatusCode::BAD_REQUEST,
-            "Use an owner passphrase with at least 12 characters.",
-        );
+    if name.is_none() {
+        return error(StatusCode::BAD_REQUEST, "Choose a business name.");
     }
-    if name.is_none() && input.owner_passphrase.is_none() {
-        return error(
-            StatusCode::BAD_REQUEST,
-            "Choose a business name or a new passphrase.",
-        );
-    }
-    let password_hash = match input.owner_passphrase.as_deref() {
-        Some(value) => match hash_passphrase(value) {
-            Ok(hash) => Some(hash),
-            Err(_) => {
-                return error(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Could not secure this workspace.",
-                )
-            }
-        },
-        None => None,
-    };
     let mut tx = match state.db.begin().await {
         Ok(tx) => tx,
         Err(_) => {
@@ -885,19 +1168,6 @@ async fn update_settings(
             );
         }
     }
-    if let Some(value) = &password_hash {
-        if sqlx::query("UPDATE settings SET value=? WHERE key='owner_password_hash'")
-            .bind(value)
-            .execute(&mut *tx)
-            .await
-            .is_err()
-        {
-            return error(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Could not update this workspace.",
-            );
-        }
-    }
     if tx.commit().await.is_err() {
         return error(
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -907,14 +1177,11 @@ async fn update_settings(
     if let Some(value) = name {
         *state.business_name.lock().expect("business state lock") = Some(value);
     }
-    if let Some(value) = password_hash {
-        *state.owner_password_hash.lock().expect("owner state lock") = Some(value);
-    }
     Json(serde_json::json!({"ok":true,"business_name":business_name(&state)})).into_response()
 }
 async fn deletion_audit(State(state): State<AppState>, headers: HeaderMap) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     match sqlx::query_as::<_, DeletionAuditRow>(
         "SELECT request_id,action,deleted_at FROM request_deletion_audit ORDER BY id DESC",
@@ -934,8 +1201,8 @@ async fn create_client(
     headers: HeaderMap,
     Json(input): Json<ClientInput>,
 ) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     let name = input.name.trim();
     let days = input.expires_in_days.unwrap_or(90);
@@ -1012,8 +1279,8 @@ async fn set_client_offers(
     Path(id): Path<i64>,
     Json(input): Json<OfferAssignmentInput>,
 ) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     let offer_ids = match validated_offer_ids(&state.db, input.product_ids).await {
         Ok(ids) => ids,
@@ -1159,8 +1426,8 @@ async fn revoke_client(
     headers: HeaderMap,
     Path(id): Path<i64>,
 ) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     match sqlx::query("UPDATE clients SET expires_at=? WHERE id=?")
         .bind((Utc::now() - Duration::seconds(1)).to_rfc3339())
@@ -1183,8 +1450,8 @@ async fn create_product(
     headers: HeaderMap,
     Json(input): Json<ProductInput>,
 ) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     if input.name.trim().is_empty()
         || input.name.len() > 120
@@ -1228,8 +1495,8 @@ async fn update_status(
     Path(id): Path<i64>,
     Json(input): Json<StatusInput>,
 ) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     if !["new", "quoted", "closed"].contains(&input.status.as_str()) {
         return error(StatusCode::BAD_REQUEST, "Invalid request status.");
@@ -1253,8 +1520,8 @@ async fn export_single_csv(
     headers: HeaderMap,
     Path(request_file): Path<String>,
 ) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     let Some(id) = request_file
         .strip_suffix(".csv")
@@ -1276,8 +1543,8 @@ async fn export_single_csv(
     csv_response(rows, "request-export.csv")
 }
 async fn export_csv(State(state): State<AppState>, headers: HeaderMap) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     let rows = match request_rows(&state.db, None).await {
         Ok(rows) => rows,
@@ -1323,8 +1590,8 @@ fn csv_response(rows: Vec<InboxRow>, filename: &str) -> Response {
         .into_response()
 }
 async fn export_pdf(State(state): State<AppState>, headers: HeaderMap) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     let rows = sqlx::query_as::<_, InboxRow>("SELECT r.id,r.reference,r.name,r.email,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' x ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id GROUP BY r.id ORDER BY r.id DESC").fetch_all(&state.db).await.unwrap_or_default();
     let mut lines = vec![
@@ -1356,8 +1623,8 @@ async fn export_pdf(State(state): State<AppState>, headers: HeaderMap) -> Respon
         .into_response()
 }
 async fn delete_requests(State(state): State<AppState>, headers: HeaderMap) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     let mut tx = match state.db.begin().await {
         Ok(tx) => tx,
@@ -1424,8 +1691,8 @@ async fn delete_request(
     headers: HeaderMap,
     Path(id): Path<i64>,
 ) -> Response {
-    if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
     }
     if id < 1 {
         return error(StatusCode::NOT_FOUND, "Request not found.");
@@ -1493,38 +1760,6 @@ async fn delete_request(
     }))
     .into_response()
 }
-fn owner(state: &AppState, headers: &HeaderMap) -> bool {
-    let Some(passphrase) = headers
-        .get("x-owner-passphrase")
-        .and_then(|value| value.to_str().ok())
-    else {
-        return false;
-    };
-    let Some(hash) = state
-        .owner_password_hash
-        .lock()
-        .expect("owner state lock")
-        .clone()
-    else {
-        return false;
-    };
-    let Ok(parsed_hash) = PasswordHash::new(&hash) else {
-        return false;
-    };
-    Argon2::default()
-        .verify_password(passphrase.as_bytes(), &parsed_hash)
-        .is_ok()
-}
-fn valid_passphrase(value: &str) -> bool {
-    let value = value.trim();
-    (12..=256).contains(&value.len())
-}
-fn hash_passphrase(value: &str) -> Result<String, argon2::password_hash::Error> {
-    let salt = SaltString::generate(&mut OsRng);
-    Ok(Argon2::default()
-        .hash_password(value.as_bytes(), &salt)?
-        .to_string())
-}
 fn valid_email(value: &str) -> bool {
     let value = value.trim();
     value.len() <= 254 && value.contains('@') && !value.starts_with('@') && !value.ends_with('@')
@@ -1538,6 +1773,13 @@ fn random_token() -> String {
 }
 fn error(status: StatusCode, message: &str) -> Response {
     (status, Json(serde_json::json!({"error":message}))).into_response()
+}
+fn auth_error(message: &'static str) -> AuthFailure {
+    AuthFailure {
+        status: StatusCode::UNAUTHORIZED,
+        message,
+        bearer_challenge: true,
+    }
 }
 fn simple_pdf(lines: Vec<String>) -> Vec<u8> {
     let mut stream = "BT\n/F1 11 Tf\n50 760 Td\n".to_owned();
@@ -1587,15 +1829,15 @@ mod tests {
     use tempfile::TempDir;
     use tower::ServiceExt;
 
-    const TEST_OWNER_PASSPHRASE: &str = "test-owner-passphrase";
+    const TEST_AUTH_TOKEN: &str = "e2e-test-entra-token";
+    const TEST_OWNER_OID: &str = "00000000-0000-4000-8000-000000000001";
 
     fn configured_state(db: SqlitePool) -> AppState {
         AppState {
             db,
-            owner_password_hash: Arc::new(Mutex::new(Some(
-                hash_passphrase(TEST_OWNER_PASSPHRASE).expect("hash test passphrase"),
-            ))),
+            owner_oid: Arc::new(Mutex::new(Some(TEST_OWNER_OID.to_owned()))),
             business_name: Arc::new(Mutex::new(Some("Test workshop".into()))),
+            auth: AuthState::for_test(TEST_AUTH_TOKEN, TEST_OWNER_OID),
             limiter: Arc::new(Mutex::new(HashMap::new())),
             build_sha: "test".into(),
             not_found_html: Arc::new(String::new()),
@@ -1638,8 +1880,9 @@ mod tests {
         migrate_db(&db).await.expect("migrate test sqlite");
         AppState {
             db,
-            owner_password_hash: Arc::new(Mutex::new(None)),
+            owner_oid: Arc::new(Mutex::new(None)),
             business_name: Arc::new(Mutex::new(None)),
+            auth: AuthState::for_test(TEST_AUTH_TOKEN, TEST_OWNER_OID),
             limiter: Arc::new(Mutex::new(HashMap::new())),
             build_sha: "test".into(),
             not_found_html: Arc::new(String::new()),
@@ -1653,6 +1896,14 @@ mod tests {
             .body(Body::empty())
             .expect("test request")
     }
+    fn authorized_request(path: &str, client: &str) -> Request<Body> {
+        Request::builder()
+            .uri(path)
+            .header("authorization", format!("Bearer {TEST_AUTH_TOKEN}"))
+            .header("x-forwarded-for", format!("{client}, 10.0.0.1"))
+            .body(Body::empty())
+            .expect("authorized test request")
+    }
     #[test]
     fn validates_normal_email() {
         assert!(valid_email("hello@example.test"));
@@ -1664,7 +1915,7 @@ mod tests {
         assert!(simple_pdf(vec!["one request".into()]).starts_with(b"%PDF-1.4"));
     }
     #[tokio::test]
-    async fn first_owner_claim_brands_real_catalog_without_a_server_file_code() {
+    async fn first_entra_owner_claim_brands_real_catalog_without_local_passwords() {
         use axum::body::to_bytes;
 
         let dir = TempDir::new().expect("temporary app directory");
@@ -1676,9 +1927,23 @@ mod tests {
         let state = unclaimed_state(&dir).await;
         let app = app(state.clone(), dir.path().to_path_buf());
 
-        let before = app
+        let unauthenticated = app
             .clone()
             .oneshot(request("/api/setup", "198.51.100.71"))
+            .await
+            .expect("unauthenticated setup status");
+        assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+        assert_eq!(
+            unauthenticated
+                .headers()
+                .get(header::WWW_AUTHENTICATE)
+                .expect("bearer challenge"),
+            "Bearer"
+        );
+
+        let before = app
+            .clone()
+            .oneshot(authorized_request("/api/setup", "198.51.100.72"))
             .await
             .expect("unclaimed status");
         let before_json: serde_json::Value = serde_json::from_slice(
@@ -1688,9 +1953,23 @@ mod tests {
         )
         .expect("status JSON");
         assert_eq!(before_json["claimed"], false);
+        assert_eq!(before_json["owned_by_you"], false);
         assert!(!dir.path().join("owner-code.txt").exists());
 
-        let passphrase = "a first owner passphrase";
+        let rejected_password = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/admin/overview")
+                    .header("x-owner-passphrase", "a first owner passphrase")
+                    .header("x-forwarded-for", "198.51.100.73")
+                    .body(Body::empty())
+                    .expect("legacy password request"),
+            )
+            .await
+            .expect("legacy password response");
+        assert_eq!(rejected_password.status(), StatusCode::UNAUTHORIZED);
+
         let claim = app
             .clone()
             .oneshot(
@@ -1698,10 +1977,9 @@ mod tests {
                     .method("POST")
                     .uri("/api/setup")
                     .header("content-type", "application/json")
-                    .header("x-forwarded-for", "198.51.100.72")
-                    .body(Body::from(
-                        r#"{"business_name":"Cedar Repair Co.","owner_passphrase":"a first owner passphrase"}"#,
-                    ))
+                    .header("authorization", format!("Bearer {TEST_AUTH_TOKEN}"))
+                    .header("x-forwarded-for", "198.51.100.74")
+                    .body(Body::from(r#"{"business_name":"Cedar Repair Co."}"#))
                     .expect("claim request"),
             )
             .await
@@ -1714,10 +1992,9 @@ mod tests {
                     .method("POST")
                     .uri("/api/setup")
                     .header("content-type", "application/json")
-                    .header("x-forwarded-for", "198.51.100.73")
-                    .body(Body::from(
-                        r#"{"business_name":"Other business","owner_passphrase":"another secure phrase"}"#,
-                    ))
+                    .header("authorization", format!("Bearer {TEST_AUTH_TOKEN}"))
+                    .header("x-forwarded-for", "198.51.100.75")
+                    .body(Body::from(r#"{"business_name":"Other business"}"#))
                     .expect("duplicate claim request"),
             )
             .await
@@ -1731,8 +2008,8 @@ mod tests {
                     .method("POST")
                     .uri("/api/admin/products")
                     .header("content-type", "application/json")
-                    .header("x-owner-passphrase", passphrase)
-                    .header("x-forwarded-for", "198.51.100.74")
+                    .header("authorization", format!("Bearer {TEST_AUTH_TOKEN}"))
+                    .header("x-forwarded-for", "198.51.100.76")
                     .body(Body::from(
                         r#"{"name":"Boiler check","description":"Annual safety inspection."}"#,
                     ))
@@ -1748,8 +2025,8 @@ mod tests {
                     .method("POST")
                     .uri("/api/admin/clients")
                     .header("content-type", "application/json")
-                    .header("x-owner-passphrase", passphrase)
-                    .header("x-forwarded-for", "198.51.100.75")
+                    .header("authorization", format!("Bearer {TEST_AUTH_TOKEN}"))
+                    .header("x-forwarded-for", "198.51.100.77")
                     .body(Body::from(
                         r#"{"name":"June at Acorn House","expires_in_days":30}"#,
                     ))
@@ -1767,7 +2044,7 @@ mod tests {
         let token = client_json["token"].as_str().expect("client token");
         let catalog = app
             .clone()
-            .oneshot(request(&format!("/api/catalog/{token}"), "198.51.100.76"))
+            .oneshot(request(&format!("/api/catalog/{token}"), "198.51.100.78"))
             .await
             .expect("catalog response");
         let catalog_json: serde_json::Value = serde_json::from_slice(
@@ -1785,8 +2062,8 @@ mod tests {
                     .method("PATCH")
                     .uri("/api/admin/settings")
                     .header("content-type", "application/json")
-                    .header("x-owner-passphrase", passphrase)
-                    .header("x-forwarded-for", "198.51.100.77")
+                    .header("authorization", format!("Bearer {TEST_AUTH_TOKEN}"))
+                    .header("x-forwarded-for", "198.51.100.79")
                     .body(Body::from(r#"{"business_name":"Cedar Home Repair"}"#))
                     .expect("rename request"),
             )
@@ -1795,7 +2072,7 @@ mod tests {
         assert_eq!(renamed.status(), StatusCode::OK);
         let renamed_catalog = app
             .clone()
-            .oneshot(request(&format!("/api/catalog/{token}"), "198.51.100.78"))
+            .oneshot(request(&format!("/api/catalog/{token}"), "198.51.100.80"))
             .await
             .expect("renamed catalog response");
         let renamed_json: serde_json::Value = serde_json::from_slice(
@@ -1805,13 +2082,18 @@ mod tests {
         )
         .expect("renamed catalog JSON");
         assert_eq!(renamed_json["business_name"], "Cedar Home Repair");
-        let stored_hash: String =
-            sqlx::query_scalar("SELECT value FROM settings WHERE key='owner_password_hash'")
+        let stored_oid: String =
+            sqlx::query_scalar("SELECT value FROM settings WHERE key='owner_oid'")
                 .fetch_one(&state.db)
                 .await
-                .expect("stored password hash");
-        assert!(stored_hash.starts_with("$argon2"));
-        assert!(!stored_hash.contains(passphrase));
+                .expect("stored owner object id");
+        let password_count: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM settings WHERE key='owner_password_hash'")
+                .fetch_one(&state.db)
+                .await
+                .expect("legacy password count");
+        assert_eq!(stored_oid, TEST_OWNER_OID);
+        assert_eq!(password_count, 0);
     }
     #[tokio::test]
     async fn existing_database_serves_health_without_startup_writes() {
@@ -1855,6 +2137,33 @@ mod tests {
             .expect("offer count");
         assert_eq!(legacy, 0);
         assert_eq!(products, 3);
+    }
+    #[tokio::test]
+    async fn migration_removes_local_password_ownership_but_keeps_catalog_branding() {
+        let dir = TempDir::new().expect("temporary app directory");
+        let state = unclaimed_state(&dir).await;
+        sqlx::query(
+            "INSERT INTO settings (key,value) VALUES ('owner_password_hash','$argon2id$legacy'),('business_name','Existing workshop')",
+        )
+        .execute(&state.db)
+        .await
+        .expect("seed legacy password ownership");
+
+        migrate_db(&state.db)
+            .await
+            .expect("migrate legacy ownership");
+        let (owner_oid, business_name) = load_owner_configuration(&state.db)
+            .await
+            .expect("load migrated owner configuration");
+        let password_count: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM settings WHERE key='owner_password_hash'")
+                .fetch_one(&state.db)
+                .await
+                .expect("count legacy password rows");
+
+        assert_eq!(owner_oid, None);
+        assert_eq!(business_name.as_deref(), Some("Existing workshop"));
+        assert_eq!(password_count, 0);
     }
     #[tokio::test]
     async fn rate_limit_covers_api_and_404_routes_but_not_health() {
@@ -2000,7 +2309,7 @@ mod tests {
                     Request::builder()
                         .method("PATCH")
                         .uri(format!("/api/admin/clients/{id}"))
-                        .header("x-owner-passphrase", TEST_OWNER_PASSPHRASE)
+                        .header("authorization", format!("Bearer {TEST_AUTH_TOKEN}"))
                         .header("content-type", "application/json")
                         .body(Body::from(format!("{{\"product_ids\":{product_ids}}}")))
                         .expect("assignment request"),
@@ -2093,7 +2402,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!("/api/admin/requests/{first_id}.csv"))
-                    .header("x-owner-passphrase", TEST_OWNER_PASSPHRASE)
+                    .header("authorization", format!("Bearer {TEST_AUTH_TOKEN}"))
                     .body(Body::empty())
                     .expect("individual export request"),
             )
@@ -2115,7 +2424,7 @@ mod tests {
                 Request::builder()
                     .method("DELETE")
                     .uri(format!("/api/admin/requests/{first_id}"))
-                    .header("x-owner-passphrase", TEST_OWNER_PASSPHRASE)
+                    .header("authorization", format!("Bearer {TEST_AUTH_TOKEN}"))
                     .body(Body::empty())
                     .expect("individual deletion request"),
             )
@@ -2126,7 +2435,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!("/api/admin/requests/{first_id}.csv"))
-                    .header("x-owner-passphrase", TEST_OWNER_PASSPHRASE)
+                    .header("authorization", format!("Bearer {TEST_AUTH_TOKEN}"))
                     .body(Body::empty())
                     .expect("missing individual export request"),
             )
