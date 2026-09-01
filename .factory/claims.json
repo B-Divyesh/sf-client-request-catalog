@@ -40,5 +40,19 @@
     "where": "landing boundaries, catalog, terms, README",
     "test": "npm run test:e2e -- --grep @claim:no-checkout",
     "sandbox": "submit a sample request while recording requests; assert same-origin request completion and the explicit terms"
+  },
+  {
+    "id": "client-offer-visibility",
+    "claim": "Owners choose exactly which offers each private client link can open.",
+    "where": "landing preview, owner workspace, README",
+    "test": "npm run test:e2e -- --grep @claim:client-offer-visibility",
+    "sandbox": "create two private links, assign a different offer to each, and assert each catalog exposes only its assigned offer"
+  },
+  {
+    "id": "individual-request-privacy",
+    "claim": "Owners can export or delete one request without exposing other clients’ details.",
+    "where": "owner workspace, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:individual-request-privacy",
+    "sandbox": "create two requests, export one CSV, delete that one, and assert the other remains while the deleted CSV returns 404"
   }
 ]

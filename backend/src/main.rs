@@ -3,7 +3,7 @@ use axum::{
     http::{header, HeaderMap, HeaderValue, StatusCode},
     middleware::{self, Next},
     response::{Html, IntoResponse, Response},
-    routing::{delete, get, patch, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use chrono::{Duration, Utc};
@@ -11,7 +11,7 @@ use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
-    FromRow, SqlitePool,
+    FromRow, Sqlite, SqlitePool,
 };
 use std::str::FromStr;
 use std::{
@@ -63,13 +63,27 @@ struct Catalog {
 struct ClientInput {
     name: String,
     expires_in_days: Option<i64>,
+    offer_ids: Option<Vec<i64>>,
 }
-#[derive(Serialize, FromRow)]
+#[derive(Deserialize)]
+struct OfferAssignmentInput {
+    product_ids: Vec<i64>,
+}
+#[derive(Serialize)]
 struct ClientLink {
     id: i64,
     name: String,
     token: String,
     expires_at: String,
+    assigned_product_ids: Vec<i64>,
+}
+#[derive(FromRow)]
+struct ClientLinkRow {
+    id: i64,
+    name: String,
+    token: String,
+    expires_at: String,
+    assigned_product_ids: String,
 }
 #[derive(Deserialize)]
 struct RequestInput {
@@ -113,6 +127,7 @@ struct Overview {
     clients: Vec<ClientLink>,
     products: Vec<Product>,
     requests: Vec<InboxRow>,
+    deletion_audit_count: i64,
 }
 
 #[tokio::main]
@@ -171,6 +186,9 @@ async fn main() {
         init_db(&db).await.expect("initialize database");
         fs::write(&ready_path, b"ready\n").expect("mark database initialized");
     }
+    migrate_db(&db)
+        .await
+        .expect("apply compatible database migrations");
     let state = AppState {
         db: db.clone(),
         owner_code: Arc::new(owner_code),
@@ -211,10 +229,18 @@ fn app(mut state: AppState, dist_dir: PathBuf) -> Router {
         .route("/api/catalog/:token/requests", post(create_request))
         .route("/api/admin/overview", get(overview))
         .route("/api/admin/clients", post(create_client))
-        .route("/api/admin/clients/:id", delete(revoke_client))
+        .route(
+            "/api/admin/clients/:id",
+            delete(revoke_client).patch(set_client_offers),
+        )
         .route("/api/admin/products", post(create_product))
         .route("/api/admin/requests", delete(delete_requests))
-        .route("/api/admin/requests/:id", patch(update_status))
+        .route(
+            "/api/admin/requests/:id",
+            get(export_single_csv)
+                .patch(update_status)
+                .delete(delete_request),
+        )
         .route("/api/admin/requests.csv", get(export_csv))
         .route("/api/admin/requests.pdf", get(export_pdf))
         .route_service("/", ServeFile::new(&index))
@@ -268,6 +294,9 @@ async fn init_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
         "CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL, price_cents INTEGER, currency TEXT NOT NULL DEFAULT 'USD', stock_note TEXT NOT NULL DEFAULT '', visible INTEGER NOT NULL DEFAULT 1)",
         "CREATE TABLE IF NOT EXISTS requests (id INTEGER PRIMARY KEY, reference TEXT NOT NULL UNIQUE, client_id INTEGER NOT NULL, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT, client_reference TEXT, note TEXT, status TEXT NOT NULL DEFAULT 'new', created_at TEXT NOT NULL, FOREIGN KEY(client_id) REFERENCES clients(id))",
         "CREATE TABLE IF NOT EXISTS request_items (request_id INTEGER NOT NULL, product_id INTEGER NOT NULL, quantity INTEGER NOT NULL, FOREIGN KEY(request_id) REFERENCES requests(id), FOREIGN KEY(product_id) REFERENCES products(id))",
+        "CREATE TABLE IF NOT EXISTS client_products (client_id INTEGER NOT NULL, product_id INTEGER NOT NULL, PRIMARY KEY(client_id, product_id), FOREIGN KEY(client_id) REFERENCES clients(id), FOREIGN KEY(product_id) REFERENCES products(id))",
+        "CREATE TABLE IF NOT EXISTS request_deletion_audit (id INTEGER PRIMARY KEY, request_id INTEGER NOT NULL, deleted_at TEXT NOT NULL, action TEXT NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL)",
     ] {
         sqlx::query(statement).execute(db).await?;
     }
@@ -297,6 +326,42 @@ async fn init_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
         .await?;
     if product_count == 0 {
         sqlx::query("INSERT INTO products (name,description,price_cents,currency,stock_note) VALUES ('Quarterly maintenance visit','A careful on-site check, clean and adjustment for your existing installation.',18500,'USD','Booked after we confirm a suitable time.'),('Replacement fitting set','A matched set prepared for your existing order or specification.',NULL,'USD','Price and compatibility confirmed in the quote.'),('Repeat consumables pack','The usual replenishment pack, picked against your previous order.',4200,'USD','Availability manually confirmed before we quote.')").execute(db).await?;
+    }
+    Ok(())
+}
+/// Adds the per-client visibility and privacy-deletion tables to databases
+/// created before this repair. The one-time migration keeps the previous
+/// behaviour for existing links, then every later assignment is explicit.
+async fn migrate_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
+    for statement in [
+        "CREATE TABLE IF NOT EXISTS client_products (client_id INTEGER NOT NULL, product_id INTEGER NOT NULL, PRIMARY KEY(client_id, product_id), FOREIGN KEY(client_id) REFERENCES clients(id), FOREIGN KEY(product_id) REFERENCES products(id))",
+        "CREATE TABLE IF NOT EXISTS request_deletion_audit (id INTEGER PRIMARY KEY, request_id INTEGER NOT NULL, deleted_at TEXT NOT NULL, action TEXT NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL)",
+    ] {
+        sqlx::query(statement).execute(db).await?;
+    }
+    let migration_id = "client-offer-assignments-v1";
+    let already_applied: Option<String> =
+        sqlx::query_scalar("SELECT id FROM schema_migrations WHERE id=?")
+            .bind(migration_id)
+            .fetch_optional(db)
+            .await?;
+    if already_applied.is_none() {
+        let mut tx = db.begin().await?;
+        // Existing private links used to see all visible offers. Retain that
+        // choice exactly once so the upgrade does not silently empty a client
+        // catalogue; owners can now narrow each link in the workspace.
+        sqlx::query(
+            "INSERT OR IGNORE INTO client_products (client_id, product_id) SELECT c.id, p.id FROM clients c CROSS JOIN products p WHERE p.visible=1",
+        )
+        .execute(&mut *tx)
+        .await?;
+        sqlx::query("INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)")
+            .bind(migration_id)
+            .bind(Utc::now().to_rfc3339())
+            .execute(&mut *tx)
+            .await?;
+        tx.commit().await?;
     }
     Ok(())
 }
@@ -402,7 +467,26 @@ async fn get_catalog(State(state): State<AppState>, Path(token): Path<String>) -
     .bind(Utc::now().to_rfc3339())
     .fetch_optional(&state.db)
     .await;
-    match client { Ok(Some((_id, name, expiry))) => match sqlx::query_as::<_, Product>("SELECT id,name,description,price_cents,currency,stock_note,visible FROM products WHERE visible=1 ORDER BY id").fetch_all(&state.db).await { Ok(products) => Json(Catalog { business_name: "Field & Form".into(), client_name: name, expires_at: expiry, products }).into_response(), Err(_) => error(StatusCode::INTERNAL_SERVER_ERROR, "Catalog storage is unavailable.") }, Ok(None) => error(StatusCode::GONE, "This client link has expired or is not valid."), Err(_) => error(StatusCode::INTERNAL_SERVER_ERROR, "Catalog storage is unavailable.") }
+    match client {
+        Ok(Some((id, name, expiry))) => match sqlx::query_as::<_, Product>(
+            "SELECT p.id,p.name,p.description,p.price_cents,p.currency,p.stock_note,p.visible FROM products p INNER JOIN client_products cp ON cp.product_id=p.id WHERE cp.client_id=? AND p.visible=1 ORDER BY p.id",
+        )
+        .bind(id)
+        .fetch_all(&state.db)
+        .await
+        {
+            Ok(products) => Json(Catalog {
+                business_name: "Field & Form".into(),
+                client_name: name,
+                expires_at: expiry,
+                products,
+            })
+            .into_response(),
+            Err(_) => error(StatusCode::INTERNAL_SERVER_ERROR, "Catalog storage is unavailable."),
+        },
+        Ok(None) => error(StatusCode::GONE, "This client link has expired or is not valid."),
+        Err(_) => error(StatusCode::INTERNAL_SERVER_ERROR, "Catalog storage is unavailable."),
+    }
 }
 fn demo_catalog() -> Catalog {
     Catalog {
@@ -502,9 +586,11 @@ async fn create_request(
     // Validate the selected products before acquiring SQLite's single writer.
     // The write transaction itself does no read-before-write reference race.
     for item in &input.items {
-        let valid =
-            sqlx::query_scalar::<_, i64>("SELECT id FROM products WHERE id=? AND visible=1")
+        let valid = sqlx::query_scalar::<_, i64>(
+            "SELECT p.id FROM products p INNER JOIN client_products cp ON cp.product_id=p.id WHERE p.id=? AND p.visible=1 AND cp.client_id=?",
+        )
                 .bind(item.product_id)
+                .bind(client)
                 .fetch_optional(&state.db)
                 .await;
         if !matches!(valid, Ok(Some(_))) {
@@ -600,18 +686,18 @@ async fn overview(State(state): State<AppState>, headers: HeaderMap) -> Response
         return error(StatusCode::UNAUTHORIZED, "Owner code required.");
     }
     let products = sqlx::query_as::<_, Product>("SELECT id,name,description,price_cents,currency,stock_note,visible FROM products ORDER BY id DESC").fetch_all(&state.db).await.unwrap_or_default();
-    let requests = sqlx::query_as::<_, InboxRow>("SELECT r.id,r.reference,r.name,r.email,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' × ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id GROUP BY r.id ORDER BY r.id DESC").fetch_all(&state.db).await.unwrap_or_default();
-    let clients = sqlx::query_as::<_, ClientLink>(
-        "SELECT id,name,token,expires_at FROM clients WHERE token <> 'demo-client' AND token NOT LIKE 'revoked-%' ORDER BY id DESC",
-    )
-    .fetch_all(&state.db)
-    .await
-    .unwrap_or_default();
+    let requests = request_rows(&state.db, None).await.unwrap_or_default();
+    let clients = client_links(&state.db).await.unwrap_or_default();
+    let deletion_audit_count = sqlx::query_scalar("SELECT COUNT(*) FROM request_deletion_audit")
+        .fetch_one(&state.db)
+        .await
+        .unwrap_or(0);
     Json(Overview {
         business_name: "Field & Form".into(),
         clients,
         products,
         requests,
+        deletion_audit_count,
     })
     .into_response()
 }
@@ -633,24 +719,211 @@ async fn create_client(
     }
     let token = random_token();
     let expires_at = (Utc::now() + Duration::days(days)).to_rfc3339();
-    match sqlx::query("INSERT INTO clients (name,token,expires_at) VALUES (?,?,?)")
+    let offer_ids = match input.offer_ids {
+        Some(ids) => match validated_offer_ids(&state.db, ids).await {
+            Ok(ids) => ids,
+            Err(response) => return response,
+        },
+        // API users from before this repair did not send assignment data.
+        // Keep those links usable while the owner workspace sends an explicit
+        // checked list on every new client link.
+        None => visible_offer_ids(&state.db).await,
+    };
+    let mut tx = match state.db.begin().await {
+        Ok(tx) => tx,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not create that client link.",
+            )
+        }
+    };
+    let row = match sqlx::query("INSERT INTO clients (name,token,expires_at) VALUES (?,?,?)")
         .bind(name)
         .bind(&token)
         .bind(&expires_at)
-        .execute(&state.db)
+        .execute(&mut *tx)
         .await
     {
-        Ok(row) => Json(ClientLink {
-            id: row.last_insert_rowid(),
-            name: name.into(),
-            token,
-            expires_at,
-        })
-        .into_response(),
-        Err(_) => error(
+        Ok(row) => row,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not create that client link.",
+            )
+        }
+    };
+    let id = row.last_insert_rowid();
+    if let Err(response) = replace_client_offers(&mut tx, id, &offer_ids).await {
+        return response;
+    }
+    if tx.commit().await.is_err() {
+        return error(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Could not create that client link.",
-        ),
+        );
+    }
+    Json(ClientLink {
+        id,
+        name: name.into(),
+        token,
+        expires_at,
+        assigned_product_ids: offer_ids,
+    })
+    .into_response()
+}
+async fn set_client_offers(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<i64>,
+    Json(input): Json<OfferAssignmentInput>,
+) -> Response {
+    if !owner(&state, &headers) {
+        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+    }
+    let offer_ids = match validated_offer_ids(&state.db, input.product_ids).await {
+        Ok(ids) => ids,
+        Err(response) => return response,
+    };
+    let mut tx = match state.db.begin().await {
+        Ok(tx) => tx,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not update offer visibility.",
+            )
+        }
+    };
+    let exists = match sqlx::query_scalar::<_, i64>("SELECT id FROM clients WHERE id=?")
+        .bind(id)
+        .fetch_optional(&mut *tx)
+        .await
+    {
+        Ok(Some(_)) => true,
+        Ok(None) => false,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not update offer visibility.",
+            )
+        }
+    };
+    if !exists {
+        return error(StatusCode::NOT_FOUND, "Client link not found.");
+    }
+    if let Err(response) = replace_client_offers(&mut tx, id, &offer_ids).await {
+        return response;
+    }
+    if tx.commit().await.is_err() {
+        return error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not update offer visibility.",
+        );
+    }
+    Json(serde_json::json!({"ok":true,"assigned_product_ids":offer_ids})).into_response()
+}
+async fn visible_offer_ids(db: &SqlitePool) -> Vec<i64> {
+    sqlx::query_scalar("SELECT id FROM products WHERE visible=1 ORDER BY id")
+        .fetch_all(db)
+        .await
+        .unwrap_or_default()
+}
+async fn validated_offer_ids(
+    db: &SqlitePool,
+    mut offer_ids: Vec<i64>,
+) -> Result<Vec<i64>, Response> {
+    if offer_ids.len() > 250 || offer_ids.iter().any(|id| *id < 1) {
+        return Err(error(
+            StatusCode::BAD_REQUEST,
+            "Choose valid offers for this client.",
+        ));
+    }
+    offer_ids.sort_unstable();
+    offer_ids.dedup();
+    for id in &offer_ids {
+        let valid =
+            sqlx::query_scalar::<_, i64>("SELECT id FROM products WHERE id=? AND visible=1")
+                .bind(id)
+                .fetch_optional(db)
+                .await;
+        if !matches!(valid, Ok(Some(_))) {
+            return Err(error(
+                StatusCode::BAD_REQUEST,
+                "Choose valid offers for this client.",
+            ));
+        }
+    }
+    Ok(offer_ids)
+}
+async fn replace_client_offers(
+    tx: &mut sqlx::Transaction<'_, Sqlite>,
+    client_id: i64,
+    offer_ids: &[i64],
+) -> Result<(), Response> {
+    if sqlx::query("DELETE FROM client_products WHERE client_id=?")
+        .bind(client_id)
+        .execute(&mut **tx)
+        .await
+        .is_err()
+    {
+        return Err(error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not update offer visibility.",
+        ));
+    }
+    for product_id in offer_ids {
+        if sqlx::query("INSERT INTO client_products (client_id,product_id) VALUES (?,?)")
+            .bind(client_id)
+            .bind(product_id)
+            .execute(&mut **tx)
+            .await
+            .is_err()
+        {
+            return Err(error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not update offer visibility.",
+            ));
+        }
+    }
+    Ok(())
+}
+async fn client_links(db: &SqlitePool) -> Result<Vec<ClientLink>, sqlx::Error> {
+    let rows = sqlx::query_as::<_, ClientLinkRow>(
+        "SELECT c.id,c.name,c.token,c.expires_at,COALESCE(group_concat(cp.product_id), '') assigned_product_ids FROM clients c LEFT JOIN client_products cp ON cp.client_id=c.id WHERE c.token <> 'demo-client' AND c.token NOT LIKE 'revoked-%' GROUP BY c.id ORDER BY c.id DESC",
+    )
+    .fetch_all(db)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(|row| ClientLink {
+            id: row.id,
+            name: row.name,
+            token: row.token,
+            expires_at: row.expires_at,
+            assigned_product_ids: row
+                .assigned_product_ids
+                .split(',')
+                .filter_map(|id| id.parse::<i64>().ok())
+                .collect(),
+        })
+        .collect())
+}
+async fn request_rows(
+    db: &SqlitePool,
+    request_id: Option<i64>,
+) -> Result<Vec<InboxRow>, sqlx::Error> {
+    match request_id {
+        Some(id) => sqlx::query_as::<_, InboxRow>(
+            "SELECT r.id,r.reference,r.name,r.email,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' x ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id WHERE r.id=? GROUP BY r.id ORDER BY r.id DESC",
+        )
+        .bind(id)
+        .fetch_all(db)
+        .await,
+        None => sqlx::query_as::<_, InboxRow>(
+            "SELECT r.id,r.reference,r.name,r.email,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' x ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id GROUP BY r.id ORDER BY r.id DESC",
+        )
+        .fetch_all(db)
+        .await,
     }
 }
 async fn revoke_client(
@@ -747,11 +1020,49 @@ async fn update_status(
         ),
     }
 }
+async fn export_single_csv(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(request_file): Path<String>,
+) -> Response {
+    if !owner(&state, &headers) {
+        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+    }
+    let Some(id) = request_file
+        .strip_suffix(".csv")
+        .and_then(|value| value.parse::<i64>().ok())
+        .filter(|id| *id > 0)
+    else {
+        return error(StatusCode::NOT_FOUND, "Request export not found.");
+    };
+    let rows = match request_rows(&state.db, Some(id)).await {
+        Ok(rows) if rows.len() == 1 => rows,
+        Ok(_) => return error(StatusCode::NOT_FOUND, "Request not found."),
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not create the request export.",
+            )
+        }
+    };
+    csv_response(rows, "request-export.csv")
+}
 async fn export_csv(State(state): State<AppState>, headers: HeaderMap) -> Response {
     if !owner(&state, &headers) {
         return error(StatusCode::UNAUTHORIZED, "Owner code required.");
     }
-    let rows = sqlx::query_as::<_, InboxRow>("SELECT r.id,r.reference,r.name,r.email,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' x ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id GROUP BY r.id ORDER BY r.id DESC").fetch_all(&state.db).await.unwrap_or_default();
+    let rows = match request_rows(&state.db, None).await {
+        Ok(rows) => rows,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not create the inbox export.",
+            )
+        }
+    };
+    csv_response(rows, "client-requests.csv")
+}
+fn csv_response(rows: Vec<InboxRow>, filename: &str) -> Response {
     let mut csv = "reference,name,email,status,created_at,items,note\n".to_string();
     for r in rows {
         csv.push_str(&format!(
@@ -773,10 +1084,10 @@ async fn export_csv(State(state): State<AppState>, headers: HeaderMap) -> Respon
     }
     (
         [
-            (header::CONTENT_TYPE, "text/csv; charset=utf-8"),
+            (header::CONTENT_TYPE, "text/csv; charset=utf-8".to_owned()),
             (
                 header::CONTENT_DISPOSITION,
-                "attachment; filename=client-requests.csv",
+                format!("attachment; filename={filename}"),
             ),
         ],
         csv,
@@ -820,18 +1131,139 @@ async fn delete_requests(State(state): State<AppState>, headers: HeaderMap) -> R
     if !owner(&state, &headers) {
         return error(StatusCode::UNAUTHORIZED, "Owner code required.");
     }
-    if sqlx::query("DELETE FROM request_items; DELETE FROM requests;")
-        .execute(&state.db)
+    let mut tx = match state.db.begin().await {
+        Ok(tx) => tx,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not delete request data.",
+            )
+        }
+    };
+    let ids: Vec<i64> = match sqlx::query_scalar("SELECT id FROM requests")
+        .fetch_all(&mut *tx)
         .await
-        .is_ok()
     {
-        Json(serde_json::json!({"ok":true})).into_response()
-    } else {
-        error(
+        Ok(ids) => ids,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not delete request data.",
+            )
+        }
+    };
+    if sqlx::query("DELETE FROM request_items")
+        .execute(&mut *tx)
+        .await
+        .is_err()
+        || sqlx::query("DELETE FROM requests")
+            .execute(&mut *tx)
+            .await
+            .is_err()
+    {
+        return error(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Could not delete request data.",
-        )
+        );
     }
+    for id in &ids {
+        if sqlx::query(
+            "INSERT INTO request_deletion_audit (request_id,deleted_at,action) VALUES (?,?,?)",
+        )
+        .bind(id)
+        .bind(Utc::now().to_rfc3339())
+        .bind("bulk-owner-delete")
+        .execute(&mut *tx)
+        .await
+        .is_err()
+        {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not delete request data.",
+            );
+        }
+    }
+    if tx.commit().await.is_err() {
+        return error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not delete request data.",
+        );
+    }
+    Json(serde_json::json!({"ok":true,"audit_records_added":ids.len()})).into_response()
+}
+async fn delete_request(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<i64>,
+) -> Response {
+    if !owner(&state, &headers) {
+        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+    }
+    if id < 1 {
+        return error(StatusCode::NOT_FOUND, "Request not found.");
+    }
+    let mut tx = match state.db.begin().await {
+        Ok(tx) => tx,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not delete this request.",
+            )
+        }
+    };
+    let found = match sqlx::query_scalar::<_, i64>("SELECT id FROM requests WHERE id=?")
+        .bind(id)
+        .fetch_optional(&mut *tx)
+        .await
+    {
+        Ok(found) => found,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not delete this request.",
+            )
+        }
+    };
+    if found.is_none() {
+        return error(StatusCode::NOT_FOUND, "Request not found.");
+    }
+    if sqlx::query("DELETE FROM request_items WHERE request_id=?")
+        .bind(id)
+        .execute(&mut *tx)
+        .await
+        .is_err()
+        || sqlx::query("DELETE FROM requests WHERE id=?")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .is_err()
+        || sqlx::query(
+            "INSERT INTO request_deletion_audit (request_id,deleted_at,action) VALUES (?,?,?)",
+        )
+        .bind(id)
+        .bind(Utc::now().to_rfc3339())
+        .bind("individual-owner-delete")
+        .execute(&mut *tx)
+        .await
+        .is_err()
+    {
+        return error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not delete this request.",
+        );
+    }
+    if tx.commit().await.is_err() {
+        return error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not delete this request.",
+        );
+    }
+    Json(serde_json::json!({
+        "ok":true,
+        "audit_recorded":true,
+        "message":"Request deleted. The audit record keeps only an internal request ID, action, and date."
+    }))
+    .into_response()
 }
 fn owner(state: &AppState, headers: &HeaderMap) -> bool {
     headers
@@ -900,6 +1332,7 @@ mod tests {
         let db_path = dir.path().join("catalog.sqlite");
         let db = open_db(&db_path).await.expect("open test sqlite");
         init_db(&db).await.expect("initialize test sqlite");
+        migrate_db(&db).await.expect("migrate test sqlite");
         AppState {
             db,
             owner_code: Arc::new("test-owner-code".into()),
@@ -1024,6 +1457,200 @@ mod tests {
                 .expect("health response");
             assert_eq!(health.status(), StatusCode::OK);
         }
+    }
+
+    #[tokio::test]
+    async fn client_offer_assignments_keep_catalogs_and_request_validation_separate() {
+        use axum::body::to_bytes;
+
+        let dir = TempDir::new().expect("temporary app directory");
+        fs::write(
+            dir.path().join("index.html"),
+            "<!doctype html><title>test</title>",
+        )
+        .expect("write static test page");
+        let state = test_state(&dir).await;
+        let alpha_id = sqlx::query(
+            "INSERT INTO clients (name,token,expires_at) VALUES ('Alpha','alpha-token',?)",
+        )
+        .bind((Utc::now() + Duration::days(30)).to_rfc3339())
+        .execute(&state.db)
+        .await
+        .expect("insert alpha")
+        .last_insert_rowid();
+        let beta_id = sqlx::query(
+            "INSERT INTO clients (name,token,expires_at) VALUES ('Beta','beta-token',?)",
+        )
+        .bind((Utc::now() + Duration::days(30)).to_rfc3339())
+        .execute(&state.db)
+        .await
+        .expect("insert beta")
+        .last_insert_rowid();
+        let app = app(state, dir.path().to_path_buf());
+        for (id, product_ids) in [(alpha_id, "[1]"), (beta_id, "[2]")] {
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .method("PATCH")
+                        .uri(format!("/api/admin/clients/{id}"))
+                        .header("x-owner-code", "test-owner-code")
+                        .header("content-type", "application/json")
+                        .body(Body::from(format!("{{\"product_ids\":{product_ids}}}")))
+                        .expect("assignment request"),
+                )
+                .await
+                .expect("assignment response");
+            assert_eq!(response.status(), StatusCode::OK);
+        }
+        for (token, expected_id) in [("alpha-token", 1_i64), ("beta-token", 2_i64)] {
+            let response = app
+                .clone()
+                .oneshot(request(
+                    &format!("/api/catalog/{token}"),
+                    &format!("198.51.100.{expected_id}"),
+                ))
+                .await
+                .expect("private catalog response");
+            assert_eq!(response.status(), StatusCode::OK);
+            let body = to_bytes(response.into_body(), 4096)
+                .await
+                .expect("catalog body");
+            let catalog: serde_json::Value = serde_json::from_slice(&body).expect("catalog JSON");
+            assert_eq!(catalog["products"].as_array().unwrap().len(), 1);
+            assert_eq!(catalog["products"][0]["id"], expected_id);
+        }
+        let rejected = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/catalog/alpha-token/requests")
+                    .header("content-type", "application/json")
+                    .header("x-forwarded-for", "198.51.100.40")
+                    .body(Body::from(
+                        r#"{"name":"Alpha requester","email":"alpha@example.test","items":[{"product_id":2,"quantity":1}]}"#,
+                    ))
+                    .expect("unassigned request"),
+            )
+            .await
+            .expect("unassigned response");
+        assert_eq!(rejected.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn individual_request_export_and_deletion_keep_other_people_and_audit_safe() {
+        use axum::body::to_bytes;
+
+        let dir = TempDir::new().expect("temporary app directory");
+        fs::write(
+            dir.path().join("index.html"),
+            "<!doctype html><title>test</title>",
+        )
+        .expect("write static test page");
+        let state = test_state(&dir).await;
+        let token: String = sqlx::query_scalar("SELECT token FROM clients LIMIT 1")
+            .fetch_one(&state.db)
+            .await
+            .expect("seeded client token");
+        let app = app(state.clone(), dir.path().to_path_buf());
+        for (email, address) in [
+            ("first@example.test", "198.51.100.51"),
+            ("second@example.test", "198.51.100.52"),
+        ] {
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .method("POST")
+                        .uri(format!("/api/catalog/{token}/requests"))
+                        .header("content-type", "application/json")
+                        .header("x-forwarded-for", address)
+                        .body(Body::from(format!("{{\"name\":\"Requester\",\"email\":\"{email}\",\"items\":[{{\"product_id\":1,\"quantity\":1}}]}}")))
+                        .expect("saved request"),
+                )
+                .await
+                .expect("saved request response");
+            assert_eq!(response.status(), StatusCode::OK);
+        }
+        let first_id: i64 =
+            sqlx::query_scalar("SELECT id FROM requests WHERE email='first@example.test'")
+                .fetch_one(&state.db)
+                .await
+                .expect("first request id");
+        let second_id: i64 =
+            sqlx::query_scalar("SELECT id FROM requests WHERE email='second@example.test'")
+                .fetch_one(&state.db)
+                .await
+                .expect("second request id");
+        let exported = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/admin/requests/{first_id}.csv"))
+                    .header("x-owner-code", "test-owner-code")
+                    .body(Body::empty())
+                    .expect("individual export request"),
+            )
+            .await
+            .expect("individual export response");
+        assert_eq!(exported.status(), StatusCode::OK);
+        let csv = String::from_utf8(
+            to_bytes(exported.into_body(), 4096)
+                .await
+                .expect("CSV body")
+                .to_vec(),
+        )
+        .expect("CSV text");
+        assert!(csv.contains("first@example.test"));
+        assert!(!csv.contains("second@example.test"));
+        let deleted = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("DELETE")
+                    .uri(format!("/api/admin/requests/{first_id}"))
+                    .header("x-owner-code", "test-owner-code")
+                    .body(Body::empty())
+                    .expect("individual deletion request"),
+            )
+            .await
+            .expect("individual deletion response");
+        assert_eq!(deleted.status(), StatusCode::OK);
+        let missing_export = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/admin/requests/{first_id}.csv"))
+                    .header("x-owner-code", "test-owner-code")
+                    .body(Body::empty())
+                    .expect("missing individual export request"),
+            )
+            .await
+            .expect("missing individual export response");
+        assert_eq!(missing_export.status(), StatusCode::NOT_FOUND);
+        let remaining: Vec<String> = sqlx::query_scalar("SELECT email FROM requests ORDER BY id")
+            .fetch_all(&state.db)
+            .await
+            .expect("remaining requests");
+        assert_eq!(remaining, vec!["second@example.test"]);
+        let audit: (i64, String) = sqlx::query_as(
+            "SELECT request_id,action FROM request_deletion_audit WHERE request_id=?",
+        )
+        .bind(first_id)
+        .fetch_one(&state.db)
+        .await
+        .expect("deletion audit row");
+        assert_eq!(audit, (first_id, "individual-owner-delete".to_owned()));
+        let audit_columns: Vec<String> = sqlx::query_scalar(
+            "SELECT name FROM pragma_table_info('request_deletion_audit') ORDER BY cid",
+        )
+        .fetch_all(&state.db)
+        .await
+        .expect("audit table columns");
+        assert_eq!(
+            audit_columns,
+            vec!["id", "request_id", "deleted_at", "action"]
+        );
+        assert!(second_id > first_id);
     }
 
     #[tokio::test]

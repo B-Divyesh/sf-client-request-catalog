@@ -77,6 +77,76 @@ test('@claim:owner-exports owner exports contain saved requests', async ({ reque
   expect(new TextDecoder().decode((await pdf.body()).subarray(0, 8))).toBe('%PDF-1.4');
 });
 
+test('@claim:client-offer-visibility owners assign a different private offer list to each client', async ({ page, request }) => {
+  const headers = { 'x-owner-code': 'e2e-owner-code-12345', 'x-forwarded-for': '198.51.100.211' };
+  const alpha = await request.post('/api/admin/clients', { headers, data: { name: 'Client Alpha', expires_in_days: 30, offer_ids: [1] } });
+  const beta = await request.post('/api/admin/clients', { headers, data: { name: 'Client Beta', expires_in_days: 30, offer_ids: [2] } });
+  expect(alpha.status()).toBe(200);
+  expect(beta.status()).toBe(200);
+  const alphaLink = await alpha.json() as { id: number; token: string };
+  const betaLink = await beta.json() as { id: number; token: string };
+
+  const [alphaCatalog, betaCatalog] = await Promise.all([
+    request.get(`/api/catalog/${alphaLink.token}`, { headers: { 'x-forwarded-for': '198.51.100.212' } }),
+    request.get(`/api/catalog/${betaLink.token}`, { headers: { 'x-forwarded-for': '198.51.100.213' } })
+  ]);
+  expect((await alphaCatalog.json()).products.map((product: { id: number }) => product.id)).toEqual([1]);
+  expect((await betaCatalog.json()).products.map((product: { id: number }) => product.id)).toEqual([2]);
+
+  await clientIp(page, 32);
+  await page.goto('/owner');
+  await page.locator('#owner-code').fill('e2e-owner-code-12345');
+  await page.getByRole('button', { name: 'Open inbox' }).click();
+  const alphaForm = page.locator(`.offer-assignment-form[data-client="${alphaLink.id}"]`);
+  await expect(alphaForm.getByRole('group', { name: 'Offers visible to Client Alpha' })).toBeVisible();
+  await alphaForm.locator('input[value="1"]').uncheck();
+  await alphaForm.locator('input[value="3"]').check();
+  await alphaForm.getByRole('button', { name: 'Save visible offers' }).click();
+  await expect(alphaForm.locator('.form-message')).toHaveText('Visible offers saved.');
+  await expect.poll(async () => {
+    const catalog = await request.get(`/api/catalog/${alphaLink.token}`, { headers: { 'x-forwarded-for': '198.51.100.214' } });
+    return (await catalog.json()).products.map((product: { id: number }) => product.id);
+  }).toEqual([3]);
+  const betaAfter = await request.get(`/api/catalog/${betaLink.token}`, { headers: { 'x-forwarded-for': '198.51.100.215' } });
+  expect((await betaAfter.json()).products.map((product: { id: number }) => product.id)).toEqual([2]);
+});
+
+test('@claim:individual-request-privacy owner exports and deletes only the selected request', async ({ page, request }) => {
+  const headers = { 'x-owner-code': 'e2e-owner-code-12345', 'x-forwarded-for': '198.51.100.216' };
+  const created = await request.post('/api/admin/clients', { headers, data: { name: 'Privacy request client', expires_in_days: 30, offer_ids: [1] } });
+  expect(created.status()).toBe(200);
+  const link = await created.json() as { token: string };
+  const submit = async (name: string, email: string) => request.post(`/api/catalog/${link.token}/requests`, {
+    headers: { 'x-forwarded-for': `198.51.100.${email === 'first@example.test' ? 217 : 218}` },
+    data: { name, email, items: [{ product_id: 1, quantity: 1 }] }
+  });
+  expect((await submit('First requester', 'first@example.test')).status()).toBe(200);
+  expect((await submit('Second requester', 'second@example.test')).status()).toBe(200);
+  const overview = await request.get('/api/admin/overview', { headers });
+  const rows = (await overview.json()).requests as Array<{ id: number; email: string; reference: string }>;
+  const first = rows.find(row => row.email === 'first@example.test')!;
+  const second = rows.find(row => row.email === 'second@example.test')!;
+  const exportOne = await request.get(`/api/admin/requests/${first.id}.csv`, { headers });
+  expect(exportOne.status()).toBe(200);
+  const exportText = await exportOne.text();
+  expect(exportText).toContain('first@example.test');
+  expect(exportText).not.toContain('second@example.test');
+
+  await clientIp(page, 33);
+  await page.goto('/owner');
+  await page.locator('#owner-code').fill('e2e-owner-code-12345');
+  await page.getByRole('button', { name: 'Open inbox' }).click();
+  await expect(page.getByRole('link', { name: 'Export this request' }).first()).toBeVisible();
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator(`.delete-request[data-request="${first.id}"]`).click();
+  await expect(page.locator(`.delete-request[data-request="${first.id}"]`)).toHaveCount(0);
+  const after = await request.get('/api/admin/overview', { headers });
+  const remaining = (await after.json()).requests as Array<{ id: number; email: string }>;
+  expect(remaining.some(row => row.id === first.id || row.email === 'first@example.test')).toBe(false);
+  expect(remaining.some(row => row.id === second.id && row.email === 'second@example.test')).toBe(true);
+  expect((await request.get(`/api/admin/requests/${first.id}.csv`, { headers })).status()).toBe(404);
+});
+
 test('@claim:no-trackers landing and demo use only same-origin resources', async ({ page }) => {
   await clientIp(page, 14);
   const origins = new Set<string>();

@@ -1,9 +1,9 @@
 # Client Request Catalog
 
 A private, quote-first catalog for a small service or goods business. Owners
-create opaque, expiring links for known clients. A valid link shows fixed-price,
-price-on-application, and repeat-order offers. Submitted requests appear in the
-owner inbox and can be exported as CSV or PDF.
+create opaque, expiring links for known clients and choose exactly which offers
+each link can open. Submitted requests appear in the owner inbox. Owners can
+export one request as CSV, or delete one request without exposing other clients.
 
 This is for small operators who currently collect repeat requests through
 email, messages, or a PDF price list.
@@ -57,4 +57,6 @@ owner code survive restarts.
 The landing and demo flows have no third-party runtime scripts, remote fonts,
 analytics, or trackers. The demo does not read or write SQLite. A real request
 stores the submitted contact details, selected offers, and note. Owners can
-export or delete request data. See `/privacy` and `/terms` in the app.
+export or delete one request from the inbox. Deletion leaves only an internal
+request ID, action, and date in the audit record. See `/privacy` and `/terms`
+in the app.
