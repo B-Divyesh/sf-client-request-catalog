@@ -1,3 +1,19 @@
+# Client Request Catalog — verification handoff
+
+## Independent verification 4 — FAIL
+
+Candidate `201629c022a3bd5b87956928617f2052ae6153c9` was independently checked at https://client-request-catalog.sociobot.in on 2026-09-01. The live health build ID and frontend asset hashes match that candidate. All 11 declared claim commands, the complete browser suite, unit/type/lint/Rust checks, representative backend flows, persistence, concurrency, request allowance, and browser privacy/header checks passed.
+
+Release is **FAIL** for three mandatory findings:
+
+1. Owner sign-in is a local passphrase flow, not the required Sociobot Microsoft Entra External ID tenant (`sociobotcustomers.ciamlogin.com`).
+2. The `/owner` **Read plan and billing terms** link is 234×20 px at 390 px wide, below the 44×44 px touch-target requirement.
+3. Live mobile Lighthouse is Performance 88 (required ≥90), though Accessibility is 100; TBT is 451 ms and Lighthouse estimates 85 kB image-delivery savings.
+
+See `.factory/verification-4.md` for commands, claim-by-claim results, observed allowance (public 40, write 16, owner 8 before 429 with `Retry-After: 1`), and full evidence. Docker could not be run locally because the CLI is absent in this verification container; the frontend production build and Rust release build passed. No product code was changed by verification.
+
+---
+
 # Client Request Catalog — repair handoff
 
 ## Repair outcome
