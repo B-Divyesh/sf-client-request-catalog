@@ -3,6 +3,7 @@
     "0": [
       "arc",
       "backend_src_main_appstate",
+      "backend_src_main_create_client",
       "backend_src_main_create_product",
       "backend_src_main_create_request",
       "backend_src_main_delete_requests",
@@ -11,9 +12,10 @@
       "backend_src_main_export_pdf",
       "backend_src_main_get_catalog",
       "backend_src_main_health",
-      "backend_src_main_overview",
+      "backend_src_main_not_found",
       "backend_src_main_owner",
       "backend_src_main_rate_limit",
+      "backend_src_main_revoke_client",
       "backend_src_main_update_status",
       "backend_src_main_with_security_headers",
       "hashmap",
@@ -29,86 +31,133 @@
       "statuscode"
     ],
     "1": [
+      "axe_core_playwright",
+      "eslint",
+      "package",
+      "package_devdependencies",
+      "package_devdependencies_axe_core_playwright",
+      "package_devdependencies_eslint",
+      "package_devdependencies_playwright_core",
+      "package_devdependencies_playwright_test",
+      "package_devdependencies_typescript",
+      "package_devdependencies_typescript_eslint",
+      "package_devdependencies_vite",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_build",
+      "package_scripts_check",
+      "package_scripts_dev",
+      "package_scripts_lint",
+      "package_scripts_test",
+      "package_scripts_test_e2e",
+      "package_scripts_typecheck",
+      "package_version",
+      "playwright_core",
+      "playwright_test",
+      "typescript",
+      "typescript_eslint",
+      "vite"
+    ],
+    "2": [
       "src_main",
       "src_main_additem",
       "src_main_api",
       "src_main_app",
       "src_main_basket",
       "src_main_catalog",
+      "src_main_clientlink",
       "src_main_esc",
-      "src_main_isowner",
+      "src_main_focusrouteheading",
+      "src_main_inboxrow",
       "src_main_item",
       "src_main_itemcount",
       "src_main_legal",
       "src_main_loadcatalog",
-      "src_main_loadlicensefromurl",
       "src_main_loadowner",
       "src_main_loginscreen",
       "src_main_money",
+      "src_main_notfound",
+      "src_main_ownerdata",
       "src_main_product",
       "src_main_rendercatalog",
+      "src_main_renderlanding",
       "src_main_renderowner",
-      "src_main_restorelicense",
+      "src_main_setmeta",
       "src_main_shell",
-      "src_main_submitrequest",
-      "src_main_verifylicense"
-    ],
-    "2": [
-      "backend_src_main",
-      "backend_src_main_app",
-      "backend_src_main_creates_a_valid_pdf_header",
-      "backend_src_main_init_db",
-      "backend_src_main_main",
-      "backend_src_main_rate_limit_covers_api_and_spa_fallback_but_not_health",
-      "backend_src_main_request",
-      "backend_src_main_shutdown",
-      "backend_src_main_test_state",
-      "backend_src_main_valid_email",
-      "backend_src_main_validates_normal_email",
-      "backend_src_main_window",
-      "body",
-      "error",
-      "instant",
-      "pathbuf",
-      "result",
-      "router",
-      "sqlitepool",
-      "tempdir"
+      "src_main_submitrequest"
     ],
     "3": [
-      "axe_core_playwright",
-      "package",
-      "package_devdependencies",
-      "package_devdependencies_axe_core_playwright",
-      "package_devdependencies_playwright_test",
-      "package_devdependencies_typescript",
-      "package_devdependencies_vite",
-      "package_name",
-      "package_private",
-      "package_scripts",
-      "package_scripts_build",
-      "package_scripts_dev",
-      "package_scripts_test",
-      "package_scripts_test_e2e",
-      "package_version",
-      "playwright_test",
-      "typescript",
-      "vite"
-    ],
-    "4": [
+      "backend_src_main",
       "backend_src_main_catalog",
+      "backend_src_main_clientinput",
+      "backend_src_main_clientlink",
+      "backend_src_main_create_demo_request",
+      "backend_src_main_creates_a_valid_pdf_header",
+      "backend_src_main_demo_catalog",
+      "backend_src_main_get_demo_catalog",
       "backend_src_main_inboxrow",
+      "backend_src_main_overview",
       "backend_src_main_product",
       "backend_src_main_productinput",
       "backend_src_main_requestinput",
       "backend_src_main_requestitem",
       "backend_src_main_simple_pdf",
       "backend_src_main_statusinput",
+      "backend_src_main_valid_email",
+      "backend_src_main_validate_request",
+      "backend_src_main_validates_normal_email",
+      "backend_src_main_window",
+      "instant",
       "option",
       "string",
       "vec"
     ],
+    "4": [
+      "ref_dom",
+      "ref_dom_iterable",
+      "ref_e2e",
+      "ref_es2022",
+      "ref_playwright_config_ts",
+      "ref_src",
+      "ref_vite_config_ts",
+      "tsconfig",
+      "tsconfig_compileroptions",
+      "tsconfig_compileroptions_allowimportingtsextensions",
+      "tsconfig_compileroptions_isolatedmodules",
+      "tsconfig_compileroptions_lib",
+      "tsconfig_compileroptions_module",
+      "tsconfig_compileroptions_moduledetection",
+      "tsconfig_compileroptions_moduleresolution",
+      "tsconfig_compileroptions_noemit",
+      "tsconfig_compileroptions_skiplibcheck",
+      "tsconfig_compileroptions_strict",
+      "tsconfig_compileroptions_target",
+      "tsconfig_compileroptions_usedefineforclassfields",
+      "tsconfig_include"
+    ],
     "5": [
+      "backend_src_main_app",
+      "backend_src_main_existing_database_serves_health_without_startup_writes",
+      "backend_src_main_forty_concurrent_valid_requests_are_all_saved_once",
+      "backend_src_main_init_db",
+      "backend_src_main_legacy_public_token_is_revoked_without_duplicate_offers",
+      "backend_src_main_main",
+      "backend_src_main_open_db",
+      "backend_src_main_random_token",
+      "backend_src_main_rate_limit_covers_api_and_404_routes_but_not_health",
+      "backend_src_main_request",
+      "backend_src_main_shutdown",
+      "backend_src_main_test_state",
+      "body",
+      "error",
+      "pathbuf",
+      "result",
+      "router",
+      "sqlitepool",
+      "tempdir"
+    ],
+    "6": [
       "factory_qa_backend_temp",
       "factory_qa_backend_temp_baserequest",
       "factory_qa_backend_temp_call",
@@ -117,7 +166,7 @@
       "factory_qa_backend_temp_results",
       "factory_qa_backend_temp_summary"
     ],
-    "6": [
+    "7": [
       "factory_qa_live_temp",
       "factory_qa_live_temp_auditpage",
       "factory_qa_live_temp_consoleerrors",
@@ -125,55 +174,82 @@
       "factory_qa_live_temp_requests",
       "factory_qa_live_temp_results"
     ],
-    "7": [
-      "e2e_catalog_spec"
-    ],
     "8": [
-      "pkg_client_request_catalog_server"
+      "e2e_catalog_spec",
+      "e2e_catalog_spec_clientip",
+      "e2e_catalog_spec_ownerheaders"
     ],
     "9": [
-      "playwright_config"
+      "eslint_config"
     ],
     "10": [
-      "tests_client_test"
+      "pkg_client_request_catalog_server"
     ],
     "11": [
+      "playwright_config"
+    ],
+    "12": [
+      "tests_client_test"
+    ],
+    "13": [
       "vite_config"
     ]
   },
   "cohesion": {
-    "0": 0.2246153846153846,
-    "1": 0.18972332015810275,
-    "2": 0.14210526315789473,
-    "3": 0.1111111111111111,
-    "4": 0.2909090909090909,
-    "5": 0.3333333333333333,
+    "0": 0.2222222222222222,
+    "1": 0.07407407407407407,
+    "2": 0.16307692307692306,
+    "3": 0.18478260869565216,
+    "4": 0.09523809523809523,
+    "5": 0.16374269005847952,
     "6": 0.3333333333333333,
-    "7": 1.0,
-    "8": 1.0,
+    "7": 0.3333333333333333,
+    "8": 0.6666666666666666,
     "9": 1.0,
     "10": 1.0,
-    "11": 1.0
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0
   },
   "gods": [
     {
       "id": "backend_src_main_appstate",
       "label": "AppState",
-      "degree": 20
-    },
-    {
-      "id": "backend_src_main_overview",
-      "label": "Overview",
-      "degree": 12
+      "degree": 23
     },
     {
       "id": "backend_src_main_error",
       "label": "error()",
+      "degree": 16
+    },
+    {
+      "id": "backend_src_main_overview",
+      "label": "Overview",
+      "degree": 13
+    },
+    {
+      "id": "src_main_shell",
+      "label": "shell()",
       "degree": 12
+    },
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 12
+    },
+    {
+      "id": "backend_src_main_owner",
+      "label": "owner()",
+      "degree": 11
     },
     {
       "id": "backend_src_main_create_request",
       "label": "create_request()",
+      "degree": 10
+    },
+    {
+      "id": "backend_src_main_create_client",
+      "label": "create_client()",
       "degree": 10
     },
     {
@@ -182,53 +258,44 @@
       "degree": 10
     },
     {
-      "id": "src_main_rendercatalog",
-      "label": "renderCatalog()",
+      "id": "backend_src_main_revoke_client",
+      "label": "revoke_client()",
       "degree": 9
-    },
-    {
-      "id": "backend_src_main_create_product",
-      "label": "create_product()",
-      "degree": 9
-    },
-    {
-      "id": "backend_src_main_owner",
-      "label": "owner()",
-      "degree": 9
-    },
-    {
-      "id": "backend_src_main_delete_requests",
-      "label": "delete_requests()",
-      "degree": 8
-    },
-    {
-      "id": "backend_src_main_export_pdf",
-      "label": "export_pdf()",
-      "degree": 8
     }
   ],
   "surprises": [
     {
       "source": "Overview",
-      "target": "InboxRow",
+      "target": "HeaderMap",
       "source_files": [
         "backend/src/main.rs",
-        "backend/src/main.rs"
+        ""
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
-      "note": "Bridges community 4 \u2192 community 0"
+      "note": "Bridges community 0 \u2192 community 3"
     },
     {
-      "source": "create_request()",
-      "target": "valid_email()",
+      "source": "open_db()",
+      "target": "Path",
       "source_files": [
         "backend/src/main.rs",
-        "backend/src/main.rs"
+        ""
       ],
       "confidence": "EXTRACTED",
-      "relation": "calls",
-      "note": "Bridges community 2 \u2192 community 0"
+      "relation": "references",
+      "note": "Bridges community 0 \u2192 community 5"
+    },
+    {
+      "source": "random_token()",
+      "target": "String",
+      "source_files": [
+        "backend/src/main.rs",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 3 \u2192 community 5"
     }
   ],
   "tokens": {
