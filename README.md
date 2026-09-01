@@ -1,62 +1,30 @@
 # Client Request Catalog
 
-A private, quote-first catalog for a small service or goods business. Owners
-create opaque, expiring links for known clients and choose exactly which offers
-each link can open. Submitted requests appear in the owner inbox. Owners can
-export one request as CSV, or delete one request without exposing other clients.
+Client Request Catalog is for small service and goods businesses that share private prices with repeat clients. An owner creates a branded catalog, chooses the offers on each opaque client link, and receives quote requests in one inbox.
 
-This is for small operators who currently collect repeat requests through
-email, messages, or a PDF price list.
+Open /demo for a one-click isolated sample. Open /owner to create the first owner workspace. The first business chooses its own name and owner passphrase in the browser; the server stores only an Argon2 password hash in SQLite. There is no server-file owner code.
 
-## Run locally
+## Run
 
-Requirements: Node 22+ and Rust 1.88+.
+    npm ci
+    npm run build
+    cargo run --manifest-path backend/Cargo.toml
 
-```sh
-npm ci
-npm run build
-cargo run --manifest-path backend/Cargo.toml
-```
-
-Open `http://localhost:8080/demo` for the isolated sample. Open `/owner` to
-create a real client link. The first startup creates a SQLite database and a
-strong owner code in `/data/owner-code.txt` (or under `DATA_DIR` when set).
-Do not share the owner code with clients. `PORT`, `DATA_DIR`, and `OWNER_CODE`
-are optional overrides.
-
-Repaired deployments store active data in `/data/catalog-live.sqlite`. The
-adjacent `catalog-live.ready` marker is written only after first initialization.
-Zero-byte database files from rejected rollout attempts remain untouched.
+The service runs on PORT (default 8080) with no required environment variables. It writes SQLite state to /data/catalog-live.sqlite by default, or DATA_DIR when set. Persist /data in deployment.
 
 ## Verify
 
-```sh
-npm test
-cargo test --manifest-path backend/Cargo.toml
-npm run check
-npm run test:e2e
-npm run build
-```
+    npm test
+    npm run check
+    npm run build
+    cargo fmt --manifest-path backend/Cargo.toml -- --check
+    cargo test --manifest-path backend/Cargo.toml
+    npm run test:e2e
 
-`npm run build` writes the frontend to `dist/`. Browser tests start a temporary
-SQLite server and run every claim from `.factory/claims.json`. They cover the
-demo sandbox, opaque client-link lifecycle, request delivery, exports,
-same-origin privacy, light and dark accessibility, mobile, keyboard, offline
-errors, metadata, response headers, rate limits, and 404 behavior.
-
-## Deploy
-
-The root `Dockerfile` is a multi-stage container build. It compiles the Vite
-frontend and Rust service, runs as a non-root user, and serves both on `PORT`
-(default `8080`). It accepts the factory `BUILD_SHA` build argument and exposes
-`/health`. Persist `/data` in deployment so the catalog database and generated
-owner code survive restarts.
+Every visitor-facing statement is registered in .factory/claims.json. The browser suite covers first-run ownership and branding, the demo sandbox, request privacy, individual export/deletion and minimal audit fields, opaque links, exports, the billing handoff, accessibility, mobile, keyboard, offline failure handling, metadata, headers, and rate limits.
 
 ## Privacy and billing
 
-The landing and demo flows have no third-party runtime scripts, remote fonts,
-analytics, or trackers. The demo does not read or write SQLite. A real request
-stores the submitted contact details, selected offers, and note. Owners can
-export or delete one request from the inbox. Deletion leaves only an internal
-request ID, action, and date in the audit record. See `/privacy` and `/terms`
-in the app.
+The demo is non-persistent. Real requests store submitted contact details and selected offers so the business can reply. Owners can export or delete one request. Deletion retains only an internal request ID, action, and date.
+
+The hosted catalog plan is $12 per month. The product links to the hosted Sociobot checkout; Sociobot is the merchant of record and handles subscription billing and receipts. The request flow itself never starts checkout or charges a client.

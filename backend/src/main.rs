@@ -1,3 +1,7 @@
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
 use axum::{
     extract::{Path, Request, State},
     http::{header, HeaderMap, HeaderValue, StatusCode},
@@ -30,7 +34,8 @@ use tracing::info;
 #[derive(Clone)]
 struct AppState {
     db: SqlitePool,
-    owner_code: Arc<String>,
+    owner_password_hash: Arc<Mutex<Option<String>>>,
+    business_name: Arc<Mutex<Option<String>>>,
     limiter: Arc<Mutex<HashMap<String, Window>>>,
     build_sha: String,
     not_found_html: Arc<String>,
@@ -40,8 +45,14 @@ struct Window {
     tokens: f64,
 }
 
-const RATE_LIMIT_PER_SECOND: f64 = 20.0;
-const RATE_LIMIT_BURST: f64 = 40.0;
+const PUBLIC_RATE_PER_SECOND: f64 = 20.0;
+const PUBLIC_RATE_BURST: f64 = 40.0;
+// Mutating catalog endpoints are intentionally tighter than reads. Owner
+// routes verify a passphrase, so they receive the smallest allowance.
+const WRITE_RATE_PER_SECOND: f64 = 8.0;
+const WRITE_RATE_BURST: f64 = 16.0;
+const OWNER_RATE_PER_SECOND: f64 = 4.0;
+const OWNER_RATE_BURST: f64 = 8.0;
 #[derive(Serialize, FromRow)]
 struct Product {
     id: i64,
@@ -129,6 +140,22 @@ struct Overview {
     requests: Vec<InboxRow>,
     deletion_audit_count: i64,
 }
+#[derive(Deserialize)]
+struct SetupInput {
+    business_name: String,
+    owner_passphrase: String,
+}
+#[derive(Deserialize)]
+struct SettingsInput {
+    business_name: Option<String>,
+    owner_passphrase: Option<String>,
+}
+#[derive(Serialize, FromRow)]
+struct DeletionAuditRow {
+    request_id: i64,
+    action: String,
+    deleted_at: String,
+}
 
 #[tokio::main]
 async fn main() {
@@ -138,22 +165,6 @@ async fn main() {
         .init();
     let data_dir = env::var("DATA_DIR").unwrap_or_else(|_| "/data".into());
     fs::create_dir_all(&data_dir).expect("create data directory");
-    let key_path = PathBuf::from(&data_dir).join("owner-code.txt");
-    let (owner_code, generated) = match env::var("OWNER_CODE") {
-        Ok(value) if value.len() >= 12 => (value, false),
-        _ => match fs::read_to_string(&key_path) {
-            Ok(value) => (value.trim().into(), false),
-            Err(_) => {
-                let generated: String = rand::thread_rng()
-                    .sample_iter(&Alphanumeric)
-                    .take(28)
-                    .map(char::from)
-                    .collect();
-                fs::write(&key_path, &generated).expect("persist generated owner code");
-                (generated, true)
-            }
-        },
-    };
     // Rejected revisions left zero-byte SQLite files and hot journals on the
     // mounted share. Keep them untouched; use a clean, single-connection file.
     let db_path = PathBuf::from(&data_dir).join("catalog-live.sqlite");
@@ -189,17 +200,20 @@ async fn main() {
     migrate_db(&db)
         .await
         .expect("apply compatible database migrations");
+    let (owner_password_hash, business_name) = load_owner_configuration(&db)
+        .await
+        .expect("load owner configuration");
     let state = AppState {
         db: db.clone(),
-        owner_code: Arc::new(owner_code),
+        owner_password_hash: Arc::new(Mutex::new(owner_password_hash)),
+        business_name: Arc::new(Mutex::new(business_name)),
         limiter: Arc::new(Mutex::new(HashMap::new())),
         build_sha: env::var("BUILD_SHA").unwrap_or_else(|_| "dev".into()),
         not_found_html: Arc::new(String::new()),
     };
     info!(
-        generated_owner_code = generated,
-        supplied_owner_code = env::var("OWNER_CODE").is_ok(),
-        "runtime configuration ready; owner code is persisted under data directory (never printed)"
+        owner_workspace_claimed = state.owner_password_hash.lock().expect("owner state lock").is_some(),
+        "runtime configuration ready; first owner setup is available when the workspace is unclaimed"
     );
     let app = app(state, PathBuf::from("dist"));
     let port = env::var("PORT")
@@ -223,11 +237,14 @@ fn app(mut state: AppState, dist_dir: PathBuf) -> Router {
     }));
     Router::new()
         .route("/health", get(health))
+        .route("/api/setup", get(setup_status).post(claim_workspace))
         .route("/api/demo/catalog", get(get_demo_catalog))
         .route("/api/demo/requests", post(create_demo_request))
         .route("/api/catalog/:token", get(get_catalog))
         .route("/api/catalog/:token/requests", post(create_request))
         .route("/api/admin/overview", get(overview))
+        .route("/api/admin/settings", axum::routing::patch(update_settings))
+        .route("/api/admin/deletion-audit", get(deletion_audit))
         .route("/api/admin/clients", post(create_client))
         .route(
             "/api/admin/clients/:id",
@@ -296,6 +313,7 @@ async fn init_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
         "CREATE TABLE IF NOT EXISTS request_items (request_id INTEGER NOT NULL, product_id INTEGER NOT NULL, quantity INTEGER NOT NULL, FOREIGN KEY(request_id) REFERENCES requests(id), FOREIGN KEY(product_id) REFERENCES products(id))",
         "CREATE TABLE IF NOT EXISTS client_products (client_id INTEGER NOT NULL, product_id INTEGER NOT NULL, PRIMARY KEY(client_id, product_id), FOREIGN KEY(client_id) REFERENCES clients(id), FOREIGN KEY(product_id) REFERENCES products(id))",
         "CREATE TABLE IF NOT EXISTS request_deletion_audit (id INTEGER PRIMARY KEY, request_id INTEGER NOT NULL, deleted_at TEXT NOT NULL, action TEXT NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
         "CREATE TABLE IF NOT EXISTS schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL)",
     ] {
         sqlx::query(statement).execute(db).await?;
@@ -307,26 +325,6 @@ async fn init_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
         .bind((Utc::now() - Duration::seconds(1)).to_rfc3339())
         .execute(db)
         .await?;
-    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM clients WHERE expires_at > ?")
-        .bind(Utc::now().to_rfc3339())
-        .fetch_one(db)
-        .await?;
-    if count == 0 {
-        let expiry = (Utc::now() + Duration::days(365)).to_rfc3339();
-        sqlx::query(
-            "INSERT INTO clients (name, token, expires_at) VALUES ('First private client', ?, ?)",
-        )
-        .bind(random_token())
-        .bind(expiry)
-        .execute(db)
-        .await?;
-    }
-    let product_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM products")
-        .fetch_one(db)
-        .await?;
-    if product_count == 0 {
-        sqlx::query("INSERT INTO products (name,description,price_cents,currency,stock_note) VALUES ('Quarterly maintenance visit','A careful on-site check, clean and adjustment for your existing installation.',18500,'USD','Booked after we confirm a suitable time.'),('Replacement fitting set','A matched set prepared for your existing order or specification.',NULL,'USD','Price and compatibility confirmed in the quote.'),('Repeat consumables pack','The usual replenishment pack, picked against your previous order.',4200,'USD','Availability manually confirmed before we quote.')").execute(db).await?;
-    }
     Ok(())
 }
 /// Adds the per-client visibility and privacy-deletion tables to databases
@@ -336,6 +334,7 @@ async fn migrate_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
     for statement in [
         "CREATE TABLE IF NOT EXISTS client_products (client_id INTEGER NOT NULL, product_id INTEGER NOT NULL, PRIMARY KEY(client_id, product_id), FOREIGN KEY(client_id) REFERENCES clients(id), FOREIGN KEY(product_id) REFERENCES products(id))",
         "CREATE TABLE IF NOT EXISTS request_deletion_audit (id INTEGER PRIMARY KEY, request_id INTEGER NOT NULL, deleted_at TEXT NOT NULL, action TEXT NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
         "CREATE TABLE IF NOT EXISTS schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL)",
     ] {
         sqlx::query(statement).execute(db).await?;
@@ -365,13 +364,25 @@ async fn migrate_db(db: &SqlitePool) -> Result<(), sqlx::Error> {
     }
     Ok(())
 }
+async fn load_owner_configuration(
+    db: &SqlitePool,
+) -> Result<(Option<String>, Option<String>), sqlx::Error> {
+    let owner_password_hash =
+        sqlx::query_scalar("SELECT value FROM settings WHERE key='owner_password_hash'")
+            .fetch_optional(db)
+            .await?;
+    let business_name = sqlx::query_scalar("SELECT value FROM settings WHERE key='business_name'")
+        .fetch_optional(db)
+        .await?;
+    Ok((owner_password_hash, business_name))
+}
 async fn rate_limit(State(state): State<AppState>, req: Request, next: Next) -> Response {
     // Health checks must remain dependable under client traffic. Every other
     // route, including static files and the SPA fallback, is limited below.
     if req.uri().path() == "/health" {
         return with_security_headers(next.run(req).await, false);
     }
-    let key = req
+    let client = req
         .headers()
         .get("x-forwarded-for")
         .and_then(|v| v.to_str().ok())
@@ -379,6 +390,14 @@ async fn rate_limit(State(state): State<AppState>, req: Request, next: Next) -> 
         .unwrap_or("local")
         .trim()
         .to_owned();
+    let (bucket, per_second, burst) = if req.uri().path().starts_with("/api/admin/") {
+        ("owner", OWNER_RATE_PER_SECOND, OWNER_RATE_BURST)
+    } else if req.uri().path() == "/api/setup" || req.method() != axum::http::Method::GET {
+        ("write", WRITE_RATE_PER_SECOND, WRITE_RATE_BURST)
+    } else {
+        ("public", PUBLIC_RATE_PER_SECOND, PUBLIC_RATE_BURST)
+    };
+    let key = format!("{bucket}:{client}");
     let rejected = {
         let mut limits = state.limiter.lock().expect("rate lock");
         let now = Instant::now();
@@ -387,10 +406,10 @@ async fn rate_limit(State(state): State<AppState>, req: Request, next: Next) -> 
         });
         let entry = limits.entry(key).or_insert(Window {
             updated_at: now,
-            tokens: RATE_LIMIT_BURST,
+            tokens: burst,
         });
         let elapsed = now.duration_since(entry.updated_at).as_secs_f64();
-        entry.tokens = (entry.tokens + elapsed * RATE_LIMIT_PER_SECOND).min(RATE_LIMIT_BURST);
+        entry.tokens = (entry.tokens + elapsed * per_second).min(burst);
         entry.updated_at = now;
         if entry.tokens < 1.0 {
             true
@@ -453,6 +472,103 @@ async fn not_found(State(state): State<AppState>) -> Response {
 async fn health(State(state): State<AppState>) -> impl IntoResponse {
     Json(serde_json::json!({"ok":true,"build_sha":state.build_sha}))
 }
+async fn setup_status(State(state): State<AppState>) -> Response {
+    let claimed = state
+        .owner_password_hash
+        .lock()
+        .expect("owner state lock")
+        .is_some();
+    Json(serde_json::json!({"claimed":claimed})).into_response()
+}
+async fn claim_workspace(State(state): State<AppState>, Json(input): Json<SetupInput>) -> Response {
+    let business_name = input.business_name.trim();
+    if business_name.is_empty() || business_name.len() > 120 {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "Enter a business name up to 120 characters.",
+        );
+    }
+    if !valid_passphrase(&input.owner_passphrase) {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "Use an owner passphrase with at least 12 characters.",
+        );
+    }
+    if state
+        .owner_password_hash
+        .lock()
+        .expect("owner state lock")
+        .is_some()
+    {
+        return error(
+            StatusCode::CONFLICT,
+            "This workspace has already been claimed.",
+        );
+    }
+    let password_hash = match hash_passphrase(&input.owner_passphrase) {
+        Ok(value) => value,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not secure this workspace.",
+            )
+        }
+    };
+    let mut tx = match state.db.begin().await {
+        Ok(tx) => tx,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not create this workspace.",
+            )
+        }
+    };
+    let existing: Option<String> =
+        match sqlx::query_scalar("SELECT value FROM settings WHERE key='owner_password_hash'")
+            .fetch_optional(&mut *tx)
+            .await
+        {
+            Ok(value) => value,
+            Err(_) => {
+                return error(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Could not create this workspace.",
+                )
+            }
+        };
+    if existing.is_some() {
+        return error(
+            StatusCode::CONFLICT,
+            "This workspace has already been claimed.",
+        );
+    }
+    if sqlx::query(
+        "INSERT INTO settings (key,value) VALUES ('owner_password_hash',?),('business_name',?)",
+    )
+    .bind(&password_hash)
+    .bind(business_name)
+    .execute(&mut *tx)
+    .await
+    .is_err()
+        || tx.commit().await.is_err()
+    {
+        return error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not create this workspace.",
+        );
+    }
+    *state.owner_password_hash.lock().expect("owner state lock") = Some(password_hash);
+    *state.business_name.lock().expect("business state lock") = Some(business_name.into());
+    Json(serde_json::json!({"ok":true,"business_name":business_name})).into_response()
+}
+fn business_name(state: &AppState) -> String {
+    state
+        .business_name
+        .lock()
+        .expect("business state lock")
+        .clone()
+        .unwrap_or_else(|| "Your catalog".into())
+}
 async fn get_catalog(State(state): State<AppState>, Path(token): Path<String>) -> Response {
     if token == "demo-client" {
         return error(
@@ -476,7 +592,7 @@ async fn get_catalog(State(state): State<AppState>, Path(token): Path<String>) -
         .await
         {
             Ok(products) => Json(Catalog {
-                business_name: "Field & Form".into(),
+                business_name: business_name(&state),
                 client_name: name,
                 expires_at: expiry,
                 products,
@@ -490,7 +606,7 @@ async fn get_catalog(State(state): State<AppState>, Path(token): Path<String>) -
 }
 fn demo_catalog() -> Catalog {
     Catalog {
-        business_name: "Field & Form sample".into(),
+        business_name: "Sample workshop".into(),
         client_name: "Avery at North Street".into(),
         expires_at: (Utc::now() + Duration::days(1)).to_rfc3339(),
         products: vec![
@@ -683,7 +799,7 @@ fn validate_request(input: &RequestInput) -> Option<Response> {
 }
 async fn overview(State(state): State<AppState>, headers: HeaderMap) -> Response {
     if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
     }
     let products = sqlx::query_as::<_, Product>("SELECT id,name,description,price_cents,currency,stock_note,visible FROM products ORDER BY id DESC").fetch_all(&state.db).await.unwrap_or_default();
     let requests = request_rows(&state.db, None).await.unwrap_or_default();
@@ -693,7 +809,7 @@ async fn overview(State(state): State<AppState>, headers: HeaderMap) -> Response
         .await
         .unwrap_or(0);
     Json(Overview {
-        business_name: "Field & Form".into(),
+        business_name: business_name(&state),
         clients,
         products,
         requests,
@@ -701,13 +817,125 @@ async fn overview(State(state): State<AppState>, headers: HeaderMap) -> Response
     })
     .into_response()
 }
+async fn update_settings(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(input): Json<SettingsInput>,
+) -> Response {
+    if !owner(&state, &headers) {
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    }
+    let name = input.business_name.map(|value| value.trim().to_owned());
+    if name
+        .as_deref()
+        .is_some_and(|value| value.is_empty() || value.len() > 120)
+    {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "Enter a business name up to 120 characters.",
+        );
+    }
+    if input
+        .owner_passphrase
+        .as_deref()
+        .is_some_and(|value| !valid_passphrase(value))
+    {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "Use an owner passphrase with at least 12 characters.",
+        );
+    }
+    if name.is_none() && input.owner_passphrase.is_none() {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "Choose a business name or a new passphrase.",
+        );
+    }
+    let password_hash = match input.owner_passphrase.as_deref() {
+        Some(value) => match hash_passphrase(value) {
+            Ok(hash) => Some(hash),
+            Err(_) => {
+                return error(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Could not secure this workspace.",
+                )
+            }
+        },
+        None => None,
+    };
+    let mut tx = match state.db.begin().await {
+        Ok(tx) => tx,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not update this workspace.",
+            )
+        }
+    };
+    if let Some(value) = &name {
+        if sqlx::query("UPDATE settings SET value=? WHERE key='business_name'")
+            .bind(value)
+            .execute(&mut *tx)
+            .await
+            .is_err()
+        {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not update this workspace.",
+            );
+        }
+    }
+    if let Some(value) = &password_hash {
+        if sqlx::query("UPDATE settings SET value=? WHERE key='owner_password_hash'")
+            .bind(value)
+            .execute(&mut *tx)
+            .await
+            .is_err()
+        {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not update this workspace.",
+            );
+        }
+    }
+    if tx.commit().await.is_err() {
+        return error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not update this workspace.",
+        );
+    }
+    if let Some(value) = name {
+        *state.business_name.lock().expect("business state lock") = Some(value);
+    }
+    if let Some(value) = password_hash {
+        *state.owner_password_hash.lock().expect("owner state lock") = Some(value);
+    }
+    Json(serde_json::json!({"ok":true,"business_name":business_name(&state)})).into_response()
+}
+async fn deletion_audit(State(state): State<AppState>, headers: HeaderMap) -> Response {
+    if !owner(&state, &headers) {
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
+    }
+    match sqlx::query_as::<_, DeletionAuditRow>(
+        "SELECT request_id,action,deleted_at FROM request_deletion_audit ORDER BY id DESC",
+    )
+    .fetch_all(&state.db)
+    .await
+    {
+        Ok(records) => Json(records).into_response(),
+        Err(_) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not read deletion audit.",
+        ),
+    }
+}
 async fn create_client(
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(input): Json<ClientInput>,
 ) -> Response {
     if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
     }
     let name = input.name.trim();
     let days = input.expires_in_days.unwrap_or(90);
@@ -722,7 +950,7 @@ async fn create_client(
     let offer_ids = match input.offer_ids {
         Some(ids) => match validated_offer_ids(&state.db, ids).await {
             Ok(ids) => ids,
-            Err(response) => return response,
+            Err(message) => return error(StatusCode::BAD_REQUEST, message),
         },
         // API users from before this repair did not send assignment data.
         // Keep those links usable while the owner workspace sends an explicit
@@ -754,8 +982,14 @@ async fn create_client(
         }
     };
     let id = row.last_insert_rowid();
-    if let Err(response) = replace_client_offers(&mut tx, id, &offer_ids).await {
-        return response;
+    if replace_client_offers(&mut tx, id, &offer_ids)
+        .await
+        .is_err()
+    {
+        return error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not create that client link.",
+        );
     }
     if tx.commit().await.is_err() {
         return error(
@@ -779,11 +1013,11 @@ async fn set_client_offers(
     Json(input): Json<OfferAssignmentInput>,
 ) -> Response {
     if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
     }
     let offer_ids = match validated_offer_ids(&state.db, input.product_ids).await {
         Ok(ids) => ids,
-        Err(response) => return response,
+        Err(message) => return error(StatusCode::BAD_REQUEST, message),
     };
     let mut tx = match state.db.begin().await {
         Ok(tx) => tx,
@@ -811,8 +1045,14 @@ async fn set_client_offers(
     if !exists {
         return error(StatusCode::NOT_FOUND, "Client link not found.");
     }
-    if let Err(response) = replace_client_offers(&mut tx, id, &offer_ids).await {
-        return response;
+    if replace_client_offers(&mut tx, id, &offer_ids)
+        .await
+        .is_err()
+    {
+        return error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not update offer visibility.",
+        );
     }
     if tx.commit().await.is_err() {
         return error(
@@ -831,12 +1071,9 @@ async fn visible_offer_ids(db: &SqlitePool) -> Vec<i64> {
 async fn validated_offer_ids(
     db: &SqlitePool,
     mut offer_ids: Vec<i64>,
-) -> Result<Vec<i64>, Response> {
+) -> Result<Vec<i64>, &'static str> {
     if offer_ids.len() > 250 || offer_ids.iter().any(|id| *id < 1) {
-        return Err(error(
-            StatusCode::BAD_REQUEST,
-            "Choose valid offers for this client.",
-        ));
+        return Err("Choose valid offers for this client.");
     }
     offer_ids.sort_unstable();
     offer_ids.dedup();
@@ -847,10 +1084,7 @@ async fn validated_offer_ids(
                 .fetch_optional(db)
                 .await;
         if !matches!(valid, Ok(Some(_))) {
-            return Err(error(
-                StatusCode::BAD_REQUEST,
-                "Choose valid offers for this client.",
-            ));
+            return Err("Choose valid offers for this client.");
         }
     }
     Ok(offer_ids)
@@ -859,17 +1093,14 @@ async fn replace_client_offers(
     tx: &mut sqlx::Transaction<'_, Sqlite>,
     client_id: i64,
     offer_ids: &[i64],
-) -> Result<(), Response> {
+) -> Result<(), &'static str> {
     if sqlx::query("DELETE FROM client_products WHERE client_id=?")
         .bind(client_id)
         .execute(&mut **tx)
         .await
         .is_err()
     {
-        return Err(error(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Could not update offer visibility.",
-        ));
+        return Err("Could not update offer visibility.");
     }
     for product_id in offer_ids {
         if sqlx::query("INSERT INTO client_products (client_id,product_id) VALUES (?,?)")
@@ -879,10 +1110,7 @@ async fn replace_client_offers(
             .await
             .is_err()
         {
-            return Err(error(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Could not update offer visibility.",
-            ));
+            return Err("Could not update offer visibility.");
         }
     }
     Ok(())
@@ -932,7 +1160,7 @@ async fn revoke_client(
     Path(id): Path<i64>,
 ) -> Response {
     if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
     }
     match sqlx::query("UPDATE clients SET expires_at=? WHERE id=?")
         .bind((Utc::now() - Duration::seconds(1)).to_rfc3339())
@@ -956,7 +1184,7 @@ async fn create_product(
     Json(input): Json<ProductInput>,
 ) -> Response {
     if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
     }
     if input.name.trim().is_empty()
         || input.name.len() > 120
@@ -1001,7 +1229,7 @@ async fn update_status(
     Json(input): Json<StatusInput>,
 ) -> Response {
     if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
     }
     if !["new", "quoted", "closed"].contains(&input.status.as_str()) {
         return error(StatusCode::BAD_REQUEST, "Invalid request status.");
@@ -1026,7 +1254,7 @@ async fn export_single_csv(
     Path(request_file): Path<String>,
 ) -> Response {
     if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
     }
     let Some(id) = request_file
         .strip_suffix(".csv")
@@ -1049,7 +1277,7 @@ async fn export_single_csv(
 }
 async fn export_csv(State(state): State<AppState>, headers: HeaderMap) -> Response {
     if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
     }
     let rows = match request_rows(&state.db, None).await {
         Ok(rows) => rows,
@@ -1096,11 +1324,11 @@ fn csv_response(rows: Vec<InboxRow>, filename: &str) -> Response {
 }
 async fn export_pdf(State(state): State<AppState>, headers: HeaderMap) -> Response {
     if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
     }
     let rows = sqlx::query_as::<_, InboxRow>("SELECT r.id,r.reference,r.name,r.email,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' x ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id GROUP BY r.id ORDER BY r.id DESC").fetch_all(&state.db).await.unwrap_or_default();
     let mut lines = vec![
-        "Field & Form — request inbox".to_owned(),
+        format!("{} — request inbox", business_name(&state)),
         format!("Exported {}", Utc::now().format("%Y-%m-%d")),
         "".to_owned(),
     ];
@@ -1129,7 +1357,7 @@ async fn export_pdf(State(state): State<AppState>, headers: HeaderMap) -> Respon
 }
 async fn delete_requests(State(state): State<AppState>, headers: HeaderMap) -> Response {
     if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
     }
     let mut tx = match state.db.begin().await {
         Ok(tx) => tx,
@@ -1197,7 +1425,7 @@ async fn delete_request(
     Path(id): Path<i64>,
 ) -> Response {
     if !owner(&state, &headers) {
-        return error(StatusCode::UNAUTHORIZED, "Owner code required.");
+        return error(StatusCode::UNAUTHORIZED, "Owner passphrase required.");
     }
     if id < 1 {
         return error(StatusCode::NOT_FOUND, "Request not found.");
@@ -1266,11 +1494,36 @@ async fn delete_request(
     .into_response()
 }
 fn owner(state: &AppState, headers: &HeaderMap) -> bool {
-    headers
-        .get("x-owner-code")
-        .and_then(|x| x.to_str().ok())
-        .map(|x| x == state.owner_code.as_str())
-        .unwrap_or(false)
+    let Some(passphrase) = headers
+        .get("x-owner-passphrase")
+        .and_then(|value| value.to_str().ok())
+    else {
+        return false;
+    };
+    let Some(hash) = state
+        .owner_password_hash
+        .lock()
+        .expect("owner state lock")
+        .clone()
+    else {
+        return false;
+    };
+    let Ok(parsed_hash) = PasswordHash::new(&hash) else {
+        return false;
+    };
+    Argon2::default()
+        .verify_password(passphrase.as_bytes(), &parsed_hash)
+        .is_ok()
+}
+fn valid_passphrase(value: &str) -> bool {
+    let value = value.trim();
+    (12..=256).contains(&value.len())
+}
+fn hash_passphrase(value: &str) -> Result<String, argon2::password_hash::Error> {
+    let salt = SaltString::generate(&mut OsRng);
+    Ok(Argon2::default()
+        .hash_password(value.as_bytes(), &salt)?
+        .to_string())
 }
 fn valid_email(value: &str) -> bool {
     let value = value.trim();
@@ -1297,7 +1550,13 @@ fn simple_pdf(lines: Vec<String>) -> Vec<u8> {
         stream.push_str(&format!("({}) Tj\n0 -16 Td\n", safe));
     }
     stream.push_str("ET\n");
-    let objects=vec!["<< /Type /Catalog /Pages 2 0 R >>".to_owned(),"<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_owned(),"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>".to_owned(),"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".to_owned(),format!("<< /Length {} >>\nstream\n{}endstream",stream.len(),stream)];
+    let objects = [
+        "<< /Type /Catalog /Pages 2 0 R >>".to_owned(),
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_owned(),
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>".to_owned(),
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".to_owned(),
+        format!("<< /Length {} >>\nstream\n{}endstream", stream.len(), stream),
+    ];
     let mut pdf = b"%PDF-1.4\n".to_vec();
     let mut offsets = Vec::new();
     for (i, object) in objects.iter().enumerate() {
@@ -1328,14 +1587,59 @@ mod tests {
     use tempfile::TempDir;
     use tower::ServiceExt;
 
+    const TEST_OWNER_PASSPHRASE: &str = "test-owner-passphrase";
+
+    fn configured_state(db: SqlitePool) -> AppState {
+        AppState {
+            db,
+            owner_password_hash: Arc::new(Mutex::new(Some(
+                hash_passphrase(TEST_OWNER_PASSPHRASE).expect("hash test passphrase"),
+            ))),
+            business_name: Arc::new(Mutex::new(Some("Test workshop".into()))),
+            limiter: Arc::new(Mutex::new(HashMap::new())),
+            build_sha: "test".into(),
+            not_found_html: Arc::new(String::new()),
+        }
+    }
+
+    async fn seed_test_catalog(db: &SqlitePool) {
+        sqlx::query("INSERT INTO products (name,description,price_cents,currency,stock_note) VALUES ('Quarterly maintenance visit','A careful on-site check, clean and adjustment for your existing installation.',18500,'USD','Booked after we confirm a suitable time.'),('Replacement fitting set','A matched set prepared for your existing order or specification.',NULL,'USD','Price and compatibility confirmed in the quote.'),('Repeat consumables pack','The usual replenishment pack, picked against your previous order.',4200,'USD','Availability manually confirmed before we quote.')")
+            .execute(db)
+            .await
+            .expect("seed products");
+        let client_id = sqlx::query(
+            "INSERT INTO clients (name, token, expires_at) VALUES ('Seed client', ?, ?)",
+        )
+        .bind(random_token())
+        .bind((Utc::now() + Duration::days(365)).to_rfc3339())
+        .execute(db)
+        .await
+        .expect("seed client")
+        .last_insert_rowid();
+        sqlx::query("INSERT INTO client_products (client_id,product_id) SELECT ?,id FROM products")
+            .bind(client_id)
+            .execute(db)
+            .await
+            .expect("assign seed products");
+    }
+
     async fn test_state(dir: &TempDir) -> AppState {
+        let db_path = dir.path().join("catalog.sqlite");
+        let db = open_db(&db_path).await.expect("open test sqlite");
+        init_db(&db).await.expect("initialize test sqlite");
+        migrate_db(&db).await.expect("migrate test sqlite");
+        seed_test_catalog(&db).await;
+        configured_state(db)
+    }
+    async fn unclaimed_state(dir: &TempDir) -> AppState {
         let db_path = dir.path().join("catalog.sqlite");
         let db = open_db(&db_path).await.expect("open test sqlite");
         init_db(&db).await.expect("initialize test sqlite");
         migrate_db(&db).await.expect("migrate test sqlite");
         AppState {
             db,
-            owner_code: Arc::new("test-owner-code".into()),
+            owner_password_hash: Arc::new(Mutex::new(None)),
+            business_name: Arc::new(Mutex::new(None)),
             limiter: Arc::new(Mutex::new(HashMap::new())),
             build_sha: "test".into(),
             not_found_html: Arc::new(String::new()),
@@ -1360,6 +1664,156 @@ mod tests {
         assert!(simple_pdf(vec!["one request".into()]).starts_with(b"%PDF-1.4"));
     }
     #[tokio::test]
+    async fn first_owner_claim_brands_real_catalog_without_a_server_file_code() {
+        use axum::body::to_bytes;
+
+        let dir = TempDir::new().expect("temporary app directory");
+        fs::write(
+            dir.path().join("index.html"),
+            "<!doctype html><title>test</title>",
+        )
+        .expect("write static test page");
+        let state = unclaimed_state(&dir).await;
+        let app = app(state.clone(), dir.path().to_path_buf());
+
+        let before = app
+            .clone()
+            .oneshot(request("/api/setup", "198.51.100.71"))
+            .await
+            .expect("unclaimed status");
+        let before_json: serde_json::Value = serde_json::from_slice(
+            &to_bytes(before.into_body(), 4096)
+                .await
+                .expect("status body"),
+        )
+        .expect("status JSON");
+        assert_eq!(before_json["claimed"], false);
+        assert!(!dir.path().join("owner-code.txt").exists());
+
+        let passphrase = "a first owner passphrase";
+        let claim = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/setup")
+                    .header("content-type", "application/json")
+                    .header("x-forwarded-for", "198.51.100.72")
+                    .body(Body::from(
+                        r#"{"business_name":"Cedar Repair Co.","owner_passphrase":"a first owner passphrase"}"#,
+                    ))
+                    .expect("claim request"),
+            )
+            .await
+            .expect("claim response");
+        assert_eq!(claim.status(), StatusCode::OK);
+        let duplicate = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/setup")
+                    .header("content-type", "application/json")
+                    .header("x-forwarded-for", "198.51.100.73")
+                    .body(Body::from(
+                        r#"{"business_name":"Other business","owner_passphrase":"another secure phrase"}"#,
+                    ))
+                    .expect("duplicate claim request"),
+            )
+            .await
+            .expect("duplicate claim response");
+        assert_eq!(duplicate.status(), StatusCode::CONFLICT);
+
+        let product = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/admin/products")
+                    .header("content-type", "application/json")
+                    .header("x-owner-passphrase", passphrase)
+                    .header("x-forwarded-for", "198.51.100.74")
+                    .body(Body::from(
+                        r#"{"name":"Boiler check","description":"Annual safety inspection."}"#,
+                    ))
+                    .expect("product request"),
+            )
+            .await
+            .expect("product response");
+        assert_eq!(product.status(), StatusCode::OK);
+        let client = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/admin/clients")
+                    .header("content-type", "application/json")
+                    .header("x-owner-passphrase", passphrase)
+                    .header("x-forwarded-for", "198.51.100.75")
+                    .body(Body::from(
+                        r#"{"name":"June at Acorn House","expires_in_days":30}"#,
+                    ))
+                    .expect("client request"),
+            )
+            .await
+            .expect("client response");
+        assert_eq!(client.status(), StatusCode::OK);
+        let client_json: serde_json::Value = serde_json::from_slice(
+            &to_bytes(client.into_body(), 4096)
+                .await
+                .expect("client body"),
+        )
+        .expect("client JSON");
+        let token = client_json["token"].as_str().expect("client token");
+        let catalog = app
+            .clone()
+            .oneshot(request(&format!("/api/catalog/{token}"), "198.51.100.76"))
+            .await
+            .expect("catalog response");
+        let catalog_json: serde_json::Value = serde_json::from_slice(
+            &to_bytes(catalog.into_body(), 4096)
+                .await
+                .expect("catalog body"),
+        )
+        .expect("catalog JSON");
+        assert_eq!(catalog_json["business_name"], "Cedar Repair Co.");
+
+        let renamed = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("PATCH")
+                    .uri("/api/admin/settings")
+                    .header("content-type", "application/json")
+                    .header("x-owner-passphrase", passphrase)
+                    .header("x-forwarded-for", "198.51.100.77")
+                    .body(Body::from(r#"{"business_name":"Cedar Home Repair"}"#))
+                    .expect("rename request"),
+            )
+            .await
+            .expect("rename response");
+        assert_eq!(renamed.status(), StatusCode::OK);
+        let renamed_catalog = app
+            .clone()
+            .oneshot(request(&format!("/api/catalog/{token}"), "198.51.100.78"))
+            .await
+            .expect("renamed catalog response");
+        let renamed_json: serde_json::Value = serde_json::from_slice(
+            &to_bytes(renamed_catalog.into_body(), 4096)
+                .await
+                .expect("renamed catalog body"),
+        )
+        .expect("renamed catalog JSON");
+        assert_eq!(renamed_json["business_name"], "Cedar Home Repair");
+        let stored_hash: String =
+            sqlx::query_scalar("SELECT value FROM settings WHERE key='owner_password_hash'")
+                .fetch_one(&state.db)
+                .await
+                .expect("stored password hash");
+        assert!(stored_hash.starts_with("$argon2"));
+        assert!(!stored_hash.contains(passphrase));
+    }
+    #[tokio::test]
     async fn existing_database_serves_health_without_startup_writes() {
         let dir = TempDir::new().expect("temporary app directory");
         let original = test_state(&dir).await;
@@ -1372,13 +1826,8 @@ mod tests {
         let second_pool = open_db(&dir.path().join("catalog.sqlite"))
             .await
             .expect("open overlapping revision database");
-        let overlapping = AppState {
-            db: second_pool,
-            owner_code: Arc::new("test-owner-code".into()),
-            limiter: Arc::new(Mutex::new(HashMap::new())),
-            build_sha: "overlap-test".into(),
-            not_found_html: Arc::new(String::new()),
-        };
+        let mut overlapping = configured_state(second_pool);
+        overlapping.build_sha = "overlap-test".into();
         let response = app(overlapping, dir.path().to_path_buf())
             .oneshot(request("/health", "198.51.100.91"))
             .await
@@ -1417,7 +1866,7 @@ mod tests {
         .expect("write static test page");
         let app = app(test_state(&dir).await, dir.path().to_path_buf());
 
-        for _ in 0..RATE_LIMIT_BURST as usize {
+        for _ in 0..PUBLIC_RATE_BURST as usize {
             let response = app
                 .clone()
                 .oneshot(request("/deep/client/link", "198.51.100.11"))
@@ -1433,7 +1882,7 @@ mod tests {
         assert_eq!(limited.status(), StatusCode::TOO_MANY_REQUESTS);
         assert_eq!(limited.headers().get(header::RETRY_AFTER).unwrap(), "1");
 
-        for _ in 0..RATE_LIMIT_BURST as usize {
+        for _ in 0..PUBLIC_RATE_BURST as usize {
             let response = app
                 .clone()
                 .oneshot(request("/api/demo/catalog", "198.51.100.12"))
@@ -1449,7 +1898,7 @@ mod tests {
         assert_eq!(limited_api.status(), StatusCode::TOO_MANY_REQUESTS);
         assert_eq!(limited_api.headers().get(header::RETRY_AFTER).unwrap(), "1");
 
-        for _ in 0..(RATE_LIMIT_BURST as usize + 2) {
+        for _ in 0..(PUBLIC_RATE_BURST as usize + 2) {
             let health = app
                 .clone()
                 .oneshot(request("/health", "198.51.100.13"))
@@ -1457,6 +1906,63 @@ mod tests {
                 .expect("health response");
             assert_eq!(health.status(), StatusCode::OK);
         }
+
+        let mut owner_tasks = tokio::task::JoinSet::new();
+        for _ in 0..(OWNER_RATE_BURST as usize + 1) {
+            let service = app.clone();
+            owner_tasks.spawn(async move {
+                service
+                    .oneshot(request("/api/admin/not-a-route", "198.51.100.14"))
+                    .await
+                    .expect("owner route response")
+            });
+        }
+        let mut owner_limited = None;
+        while let Some(result) = owner_tasks.join_next().await {
+            let response = result.expect("owner response task");
+            if response.status() == StatusCode::TOO_MANY_REQUESTS {
+                owner_limited = Some(response);
+            }
+        }
+        let owner_limited = owner_limited.expect("strict owner route is limited");
+        assert_eq!(
+            owner_limited.headers().get(header::RETRY_AFTER).unwrap(),
+            "1"
+        );
+
+        for _ in 0..WRITE_RATE_BURST as usize {
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .method("POST")
+                        .uri("/api/demo/requests")
+                        .header("content-type", "application/json")
+                        .header("x-forwarded-for", "198.51.100.15")
+                        .body(Body::from(r#"{"name":"Rate test","email":"rate@example.test","items":[{"product_id":1,"quantity":1}]}"#))
+                        .expect("write request"),
+                )
+                .await
+                .expect("write response");
+            assert_eq!(response.status(), StatusCode::OK);
+        }
+        let write_limited = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/demo/requests")
+                    .header("content-type", "application/json")
+                    .header("x-forwarded-for", "198.51.100.15")
+                    .body(Body::from(r#"{"name":"Rate test","email":"rate@example.test","items":[{"product_id":1,"quantity":1}]}"#))
+                    .expect("limited write request"),
+            )
+            .await
+            .expect("limited write response");
+        assert_eq!(write_limited.status(), StatusCode::TOO_MANY_REQUESTS);
+        assert_eq!(
+            write_limited.headers().get(header::RETRY_AFTER).unwrap(),
+            "1"
+        );
     }
 
     #[tokio::test]
@@ -1494,7 +2000,7 @@ mod tests {
                     Request::builder()
                         .method("PATCH")
                         .uri(format!("/api/admin/clients/{id}"))
-                        .header("x-owner-code", "test-owner-code")
+                        .header("x-owner-passphrase", TEST_OWNER_PASSPHRASE)
                         .header("content-type", "application/json")
                         .body(Body::from(format!("{{\"product_ids\":{product_ids}}}")))
                         .expect("assignment request"),
@@ -1587,7 +2093,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!("/api/admin/requests/{first_id}.csv"))
-                    .header("x-owner-code", "test-owner-code")
+                    .header("x-owner-passphrase", TEST_OWNER_PASSPHRASE)
                     .body(Body::empty())
                     .expect("individual export request"),
             )
@@ -1609,7 +2115,7 @@ mod tests {
                 Request::builder()
                     .method("DELETE")
                     .uri(format!("/api/admin/requests/{first_id}"))
-                    .header("x-owner-code", "test-owner-code")
+                    .header("x-owner-passphrase", TEST_OWNER_PASSPHRASE)
                     .body(Body::empty())
                     .expect("individual deletion request"),
             )
@@ -1620,7 +2126,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!("/api/admin/requests/{first_id}.csv"))
-                    .header("x-owner-code", "test-owner-code")
+                    .header("x-owner-passphrase", TEST_OWNER_PASSPHRASE)
                     .body(Body::empty())
                     .expect("missing individual export request"),
             )
