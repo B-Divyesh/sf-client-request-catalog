@@ -63,5 +63,6 @@ no people, text, logos, watermark, brands, QR codes, or unreadable glyphs.
 Generated imagery is original product artwork, disclosed in the footer. It was
 generated on 2026-08-28 using the factory Azure AI Foundry `factory-image`
 deployment; the exact final prompt and generation metadata are retained in
-`assets/src/request-desk.png.json`. It is converted to a 132 KB WebP for the
-hero (well below the 300 KB mobile budget).
+`assets/src/request-desk.png.json`. Responsive delivery uses 480, 720, and
+960 px AVIF sources (12–64 KB), plus WebP fallbacks. Mobile receives the
+smallest source that fits its pixel density.
