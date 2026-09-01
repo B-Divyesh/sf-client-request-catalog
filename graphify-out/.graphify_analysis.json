@@ -243,13 +243,13 @@
       "degree": 11
     },
     {
-      "id": "backend_src_main_create_request",
-      "label": "create_request()",
+      "id": "backend_src_main_create_client",
+      "label": "create_client()",
       "degree": 10
     },
     {
-      "id": "backend_src_main_create_client",
-      "label": "create_client()",
+      "id": "backend_src_main_create_request",
+      "label": "create_request()",
       "degree": 10
     },
     {
@@ -258,33 +258,33 @@
       "degree": 10
     },
     {
-      "id": "backend_src_main_revoke_client",
-      "label": "revoke_client()",
+      "id": "backend_src_main_create_product",
+      "label": "create_product()",
       "degree": 9
     }
   ],
   "surprises": [
     {
-      "source": "Overview",
-      "target": "HeaderMap",
+      "source": "app()",
+      "target": "AppState",
       "source_files": [
         "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 0 \u2192 community 3"
-    },
-    {
-      "source": "open_db()",
-      "target": "Path",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
+        "backend/src/main.rs"
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
       "note": "Bridges community 0 \u2192 community 5"
+    },
+    {
+      "source": "AppState",
+      "target": "Window",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 0 \u2192 community 3"
     },
     {
       "source": "random_token()",
