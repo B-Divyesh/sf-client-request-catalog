@@ -1,8 +1,8 @@
 # Independent verification 3 — FAIL
 
-**Candidate:** `cf2bf3ce8d3e07e52688f21e42b5103e6a6caa84`  
-**Live URL:** `https://client-request-catalog.sociobot.in`  
-**Verified:** 2026-09-01 UTC  
+**Candidate:** `cf2bf3ce8d3e07e52688f21e42b5103e6a6caa84`
+**Live URL:** `https://client-request-catalog.sociobot.in`
+**Verified:** 2026-09-01 UTC
 **Verdict:** **FAIL — do not release**
 
 ## Release-blocking findings
