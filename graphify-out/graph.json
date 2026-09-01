@@ -394,6 +394,16 @@
       "source_location": "L35"
     },
     {
+      "id": "backend_src_main_business_name",
+      "label": "business_name()",
+      "_origin": "ast",
+      "community": 0,
+      "file_type": "code",
+      "norm_label": "business_name()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L564"
+    },
+    {
       "id": "backend_src_main_claim_workspace",
       "label": "claim_workspace()",
       "_origin": "ast",
@@ -412,16 +422,6 @@
       "norm_label": "create_client()",
       "source_file": "backend/src/main.rs",
       "source_location": "L932"
-    },
-    {
-      "id": "backend_src_main_create_demo_request",
-      "label": "create_demo_request()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "create_demo_request()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L649"
     },
     {
       "id": "backend_src_main_create_product",
@@ -554,6 +554,16 @@
       "source_location": "L465"
     },
     {
+      "id": "backend_src_main_overview",
+      "label": "Overview",
+      "_origin": "ast",
+      "community": 0,
+      "file_type": "code",
+      "norm_label": "overview",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L136"
+    },
+    {
       "id": "backend_src_main_owner",
       "label": "owner()",
       "_origin": "ast",
@@ -632,16 +642,6 @@
       "norm_label": "valid_passphrase()",
       "source_file": "backend/src/main.rs",
       "source_location": "L1518"
-    },
-    {
-      "id": "backend_src_main_validate_request",
-      "label": "validate_request()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "validate_request()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L775"
     },
     {
       "id": "backend_src_main_with_security_headers",
@@ -784,6 +784,16 @@
       "source_location": "L233"
     },
     {
+      "id": "backend_src_main_client_links",
+      "label": "client_links()",
+      "_origin": "ast",
+      "community": 1,
+      "file_type": "code",
+      "norm_label": "client_links()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1118"
+    },
+    {
       "id": "backend_src_main_client_offer_assignments_keep_catalogs_and_request_validation_separate",
       "label": "client_offer_assignments_keep_catalogs_and_request_validation_separate()",
       "_origin": "ast",
@@ -814,6 +824,16 @@
       "source_location": "L1663"
     },
     {
+      "id": "backend_src_main_demo_catalog",
+      "label": "demo_catalog()",
+      "_origin": "ast",
+      "community": 1,
+      "file_type": "code",
+      "norm_label": "demo_catalog()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L607"
+    },
+    {
       "id": "backend_src_main_existing_database_serves_health_without_startup_writes",
       "label": "existing_database_serves_health_without_startup_writes()",
       "_origin": "ast",
@@ -842,6 +862,16 @@
       "norm_label": "forty_concurrent_valid_requests_are_all_saved_once()",
       "source_file": "backend/src/main.rs",
       "source_location": "L2163"
+    },
+    {
+      "id": "backend_src_main_get_demo_catalog",
+      "label": "get_demo_catalog()",
+      "_origin": "ast",
+      "community": 1,
+      "file_type": "code",
+      "norm_label": "get_demo_catalog()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L646"
     },
     {
       "id": "backend_src_main_hash_passphrase",
@@ -944,16 +974,6 @@
       "source_location": "L1860"
     },
     {
-      "id": "backend_src_main_replace_client_offers",
-      "label": "replace_client_offers()",
-      "_origin": "ast",
-      "community": 1,
-      "file_type": "code",
-      "norm_label": "replace_client_offers()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1092"
-    },
-    {
       "id": "backend_src_main_request",
       "label": "request()",
       "_origin": "ast",
@@ -1004,14 +1024,14 @@
       "source_location": "L1634"
     },
     {
-      "id": "backend_src_main_valid_email",
-      "label": "valid_email()",
+      "id": "backend_src_main_validated_offer_ids",
+      "label": "validated_offer_ids()",
       "_origin": "ast",
       "community": 1,
       "file_type": "code",
-      "norm_label": "valid_email()",
+      "norm_label": "validated_offer_ids()",
       "source_file": "backend/src/main.rs",
-      "source_location": "L1528"
+      "source_location": "L1071"
     },
     {
       "id": "backend_src_main_validates_normal_email",
@@ -1034,16 +1054,6 @@
       "source_location": "L1065"
     },
     {
-      "id": "backend_src_main_window",
-      "label": "Window",
-      "_origin": "ast",
-      "community": 1,
-      "file_type": "code",
-      "norm_label": "window",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L43"
-    },
-    {
       "id": "body",
       "label": "Body",
       "_origin": "ast",
@@ -1060,16 +1070,6 @@
       "community": 1,
       "file_type": "code",
       "norm_label": "error",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "instant",
-      "label": "Instant",
-      "_origin": "ast",
-      "community": 1,
-      "file_type": "code",
-      "norm_label": "instant",
       "source_file": "",
       "source_location": ""
     },
@@ -1104,16 +1104,6 @@
       "source_location": ""
     },
     {
-      "id": "sqlite",
-      "label": "Sqlite",
-      "_origin": "ast",
-      "community": 1,
-      "file_type": "code",
-      "norm_label": "sqlite",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
       "id": "sqlitepool",
       "label": "SqlitePool",
       "_origin": "ast",
@@ -1134,20 +1124,40 @@
       "source_location": ""
     },
     {
-      "id": "transaction",
-      "label": "Transaction",
+      "id": "backend_src_main_window",
+      "label": "Window",
       "_origin": "ast",
-      "community": 1,
+      "community": 10,
       "file_type": "code",
-      "norm_label": "transaction",
+      "norm_label": "window",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L43"
+    },
+    {
+      "id": "instant",
+      "label": "Instant",
+      "_origin": "ast",
+      "community": 10,
+      "file_type": "code",
+      "norm_label": "instant",
       "source_file": "",
       "source_location": ""
+    },
+    {
+      "id": "eslint_config",
+      "label": "eslint.config.mjs",
+      "_origin": "ast",
+      "community": 11,
+      "file_type": "code",
+      "norm_label": "eslint.config.mjs",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L1"
     },
     {
       "id": "pkg_client_request_catalog_server",
       "label": "client-request-catalog-server",
       "_origin": "ast",
-      "community": 10,
+      "community": 12,
       "ecosystem": "cargo",
       "file_type": "code",
       "norm_label": "client-request-catalog-server",
@@ -1160,7 +1170,7 @@
       "id": "playwright_config",
       "label": "playwright.config.ts",
       "_origin": "ast",
-      "community": 11,
+      "community": 13,
       "file_type": "code",
       "norm_label": "playwright.config.ts",
       "source_file": "playwright.config.ts",
@@ -1170,7 +1180,7 @@
       "id": "tests_client_test",
       "label": "client.test.mjs",
       "_origin": "ast",
-      "community": 12,
+      "community": 14,
       "file_type": "code",
       "norm_label": "client.test.mjs",
       "source_file": "tests/client.test.mjs",
@@ -1180,7 +1190,7 @@
       "id": "vite_config",
       "label": "vite.config.ts",
       "_origin": "ast",
-      "community": 13,
+      "community": 15,
       "file_type": "code",
       "norm_label": "vite.config.ts",
       "source_file": "vite.config.ts",
@@ -1487,16 +1497,6 @@
       "source_location": "L21"
     },
     {
-      "id": "backend_src_main_business_name",
-      "label": "business_name()",
-      "_origin": "ast",
-      "community": 4,
-      "file_type": "code",
-      "norm_label": "business_name()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L564"
-    },
-    {
       "id": "backend_src_main_catalog",
       "label": "Catalog",
       "_origin": "ast",
@@ -1505,16 +1505,6 @@
       "norm_label": "catalog",
       "source_file": "backend/src/main.rs",
       "source_location": "L67"
-    },
-    {
-      "id": "backend_src_main_client_links",
-      "label": "client_links()",
-      "_origin": "ast",
-      "community": 4,
-      "file_type": "code",
-      "norm_label": "client_links()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1118"
     },
     {
       "id": "backend_src_main_clientinput",
@@ -1547,6 +1537,16 @@
       "source_location": "L92"
     },
     {
+      "id": "backend_src_main_create_demo_request",
+      "label": "create_demo_request()",
+      "_origin": "ast",
+      "community": 4,
+      "file_type": "code",
+      "norm_label": "create_demo_request()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L649"
+    },
+    {
       "id": "backend_src_main_deletionauditrow",
       "label": "DeletionAuditRow",
       "_origin": "ast",
@@ -1555,26 +1555,6 @@
       "norm_label": "deletionauditrow",
       "source_file": "backend/src/main.rs",
       "source_location": "L154"
-    },
-    {
-      "id": "backend_src_main_demo_catalog",
-      "label": "demo_catalog()",
-      "_origin": "ast",
-      "community": 4,
-      "file_type": "code",
-      "norm_label": "demo_catalog()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L607"
-    },
-    {
-      "id": "backend_src_main_get_demo_catalog",
-      "label": "get_demo_catalog()",
-      "_origin": "ast",
-      "community": 4,
-      "file_type": "code",
-      "norm_label": "get_demo_catalog()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L646"
     },
     {
       "id": "backend_src_main_inboxrow",
@@ -1595,16 +1575,6 @@
       "norm_label": "offerassignmentinput",
       "source_file": "backend/src/main.rs",
       "source_location": "L80"
-    },
-    {
-      "id": "backend_src_main_overview",
-      "label": "Overview",
-      "_origin": "ast",
-      "community": 4,
-      "file_type": "code",
-      "norm_label": "overview",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L136"
     },
     {
       "id": "backend_src_main_product",
@@ -1697,14 +1667,24 @@
       "source_location": "L121"
     },
     {
-      "id": "backend_src_main_validated_offer_ids",
-      "label": "validated_offer_ids()",
+      "id": "backend_src_main_valid_email",
+      "label": "valid_email()",
       "_origin": "ast",
       "community": 4,
       "file_type": "code",
-      "norm_label": "validated_offer_ids()",
+      "norm_label": "valid_email()",
       "source_file": "backend/src/main.rs",
-      "source_location": "L1071"
+      "source_location": "L1528"
+    },
+    {
+      "id": "backend_src_main_validate_request",
+      "label": "validate_request()",
+      "_origin": "ast",
+      "community": 4,
+      "file_type": "code",
+      "norm_label": "validate_request()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L775"
     },
     {
       "id": "option",
@@ -2057,14 +2037,34 @@
       "source_location": "L1"
     },
     {
-      "id": "eslint_config",
-      "label": "eslint.config.mjs",
+      "id": "backend_src_main_replace_client_offers",
+      "label": "replace_client_offers()",
       "_origin": "ast",
       "community": 9,
       "file_type": "code",
-      "norm_label": "eslint.config.mjs",
-      "source_file": "eslint.config.mjs",
-      "source_location": "L1"
+      "norm_label": "replace_client_offers()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1092"
+    },
+    {
+      "id": "sqlite",
+      "label": "Sqlite",
+      "_origin": "ast",
+      "community": 9,
+      "file_type": "code",
+      "norm_label": "sqlite",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "transaction",
+      "label": "Transaction",
+      "_origin": "ast",
+      "community": 9,
+      "file_type": "code",
+      "norm_label": "transaction",
+      "source_file": "",
+      "source_location": ""
     }
   ],
   "links": [
@@ -8075,5 +8075,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "201629c022a3bd5b87956928617f2052ae6153c9"
+  "built_at_commit": "1a90acf6cbaaa31d81a1a4f1ebda6038e3cf38ab"
 }
