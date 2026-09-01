@@ -1,48 +1,33 @@
-# Client Request Catalog — independent verification 5 handoff
+# Client Request Catalog — repair 6 handoff
 
 ## Outcome
 
-**FAIL** for candidate `d9908727f33a87c529e703e09e84f69a45ae6833` at
-https://client-request-catalog.sociobot.in, verified 2026-09-01.
+Repaired the release blockers found in independent verification 5 for the
+private request-catalog product. The checkout endpoint is operator-gated and
+returned HTTP 404, so the product no longer advertises a $12 plan, checkout
+handoff, or an unavailable purchase link. The core private-catalog, demo,
+owner, request, export, and deletion behavior remains unchanged.
 
-The catalog itself works end to end, but the advertised $12 monthly-plan link
-returns production HTTP 404 with
-`{"error":"enabled factory product","status":404}`. The corresponding claim
-test passes only because it checks the anchor URL without following it. The
-release must not be accepted until checkout works or the paid claim is removed.
+## What changed
 
-Two additional defects were found: SIGTERM exits the release server with code
-143 without its graceful-shutdown path, and the generated illustration is not
-disclosed in the live footer despite the design/policy promise.
+- Reproduced the production checkout failure before changing source:
+  `GET https://api.sociobot.in/api/v1/products/client-request-catalog/checkout?plan=monthly`
+  returned `404 {"error":"enabled factory product","status":404}`.
+- Removed the paid-plan section, checkout anchors, terms copy, README promise,
+  and the shallow `hosted-subscription` claim. A Playwright regression now
+  proves both `/` and `/terms` contain no billing endpoint or paid-plan copy.
+- Added Unix SIGTERM handling to the Axum graceful-shutdown future. The Rust
+  regression raises a real process SIGTERM and proves the future resolves.
+- Added the promised live-footer disclosure: “Original illustration generated
+  with Azure AI Foundry.” Its claim test is registered in
+  `.factory/claims.json`. Existing provenance remains in `.factory/design.md`
+  and `assets/src/request-desk.png.json`.
+- Removed unused paid-plan styles and renamed the owner legal link to “Read
+  request terms.”
 
-Full findings and exact evidence are in `.factory/verification-5.md`.
+## Verification
 
-## Verification summary
-
-- All 12 commands in `.factory/claims.json` passed individually after a clean
-  `npm ci`; the live `hosted-subscription` outcome independently failed.
-- `npm test`, `npm run check`, `npm run build`, Rust formatting, 10 Rust tests,
-  Clippy with warnings denied, the locked release build, and 12 Playwright tests
-  passed.
-- Live `/health` returned the exact candidate SHA. Local/live hashes matched
-  for HTML, main JS, CSS, and the owner auth chunk.
-- First-read and one-click demo gates passed. Demo normal, invalid, boundary,
-  reset, offline-recovery, keyboard, desktop, and 390 px mobile paths passed.
-- Independent local backend QA persisted 41 requests, two offers, ownership,
-  and branding across restart. Forty concurrent writes succeeded.
-- Live throttling returned 429 plus `Retry-After: 1` after the observed public,
-  write, and owner allowances; `/health` remained available.
-- Production owner sign-in reached only the required Sociobot Microsoft Entra
-  External ID tenant and used the registered production callback.
-- Same-origin privacy logs, browser response security headers, immutable asset
-  caching, dark/light/reduced-motion axe scans, focus, touch targets, metadata,
-  and real 404 behavior passed.
-- Lighthouse mobile scored 100 in all four categories: LCP 1.134 s, TBT 49 ms,
-  CLS 0, total transfer 73,587 bytes.
-- Docker is not installed in the verifier image. The locked release binary and
-  exact live build identity were checked instead.
-
-## Run the verification
+From a clean dependency install, all completed successfully:
 
 ```sh
 npm ci
@@ -54,12 +39,46 @@ cargo test --manifest-path backend/Cargo.toml
 cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
 cargo build --release --locked --manifest-path backend/Cargo.toml
 npm run test:e2e
-curl -i 'https://api.sociobot.in/api/v1/products/client-request-catalog/checkout?plan=monthly'
 ```
 
-## Next action
+- Rust: 11 tests passed, including the real SIGTERM regression.
+- Browser: 13 Playwright tests passed. All 12 registered claim commands were
+  also run individually from `.factory/claims.json` and passed.
+- `verify-url.sh` passed against the release binary on a local fresh data
+  directory: title, `lang`, one H1, main landmark, image alt, desktop/mobile
+  screenshots, and no console errors.
+- A direct release-binary SIGTERM exited `0` and logged
+  `shutdown received` with `signal:"Terminate"`.
+- Playwright axe found no serious or critical violations at 390 px in dark
+  mode with reduced motion on `/`, `/demo`, `/owner`, `/privacy`, and `/terms`;
+  none had horizontal overflow. The regular browser suite covers keyboard,
+  demo isolation, offline submit feedback, rate limiting, and desktop/mobile.
+- Response-policy smoke confirmed CSP, HSTS, nosniff, same-origin referrer
+  policy, permissions policy, document `no-store`, and immutable hashed assets.
+- Lighthouse local mobile: Performance 100, Accessibility 100, Best Practices
+  100, SEO 100; LCP 1,429 ms, TBT 0 ms, CLS 0.
 
-Enable the product in the Sociobot billing engine, replace the shallow checkout
-claim test with an outcome test, add SIGTERM handling, deploy a new candidate,
-and rerun independent verification. No product code was changed during this
-verification.
+`npx @axe-core/cli` was attempted twice with the installed Playwright Chromium.
+Its Selenium ChromeDriver could not create a root/sandbox session
+(`SessionNotCreatedError`); this is a verifier-tool environment limitation,
+not a product violation. The repository's installed Playwright axe audit ran
+successfully instead.
+
+## Run and deploy
+
+```sh
+npm ci
+npm run build
+cargo run --manifest-path backend/Cargo.toml
+```
+
+The container starts on `PORT` (default `8080`) with no required variables and
+persists SQLite under `/data`. Deployment uses the product-owned
+`sf-client-request-catalog` Container App, its `/data` Azure Files mount, and
+an image named `sociobotregistry.azurecr.io/sf-client-request-catalog:<commit>`.
+
+## Known gaps / next step
+
+There is intentionally no paid tier or checkout link until the factory
+operator registers and enables this product in the Sociobot billing engine.
+No shared Sociobot resource was inspected or changed.

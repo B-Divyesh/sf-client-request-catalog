@@ -185,7 +185,7 @@ h3 { font-size: 1.2rem; }
 .how ol { padding: 0; list-style: none; counter-reset: steps; }
 .how li { counter-increment: steps; display: grid; grid-template-columns: 44px 220px 1fr; gap: 16px; padding: 18px 0; border-top: 1px solid var(--line); }
 .how li::before { content: "0" counter(steps); font: 700 14px ui-monospace, SFMono-Regular, monospace; color: var(--clay); }
-.how li span, .limits > p, .subscription p, .business-settings p { color: var(--muted); }
+.how li span, .limits > p, .business-settings p { color: var(--muted); }
 .limits {
   border-top: 2px solid var(--ink);
   display: grid;
@@ -193,7 +193,7 @@ h3 { font-size: 1.2rem; }
   gap: 30px;
 }
 .limits > p { max-width: 46ch; }
-.subscription, .business-settings {
+.business-settings {
   padding: 48px 0;
   display: grid;
   grid-template-columns: 1.1fr .9fr;
@@ -201,9 +201,7 @@ h3 { font-size: 1.2rem; }
   align-items: start;
   border-top: 2px solid var(--ink);
 }
-.subscription p, .business-settings p { max-width: 48ch; }
-.subscription > div:last-child { padding-top: 26px; }
-.subscription-note { font-size: 14px; margin: 12px 0 0; }
+.business-settings p { max-width: 48ch; }
 .business-settings { padding-bottom: 36px; border-top: 0; border-bottom: 1px solid var(--line); }
 .business-settings form { max-width: 460px; }
 
@@ -226,7 +224,7 @@ textarea { resize: vertical; }
 .submit { margin-top: 18px; background: var(--moss); border-color: var(--moss); color: var(--accent-contrast); }
 .form-message { min-height: 24px; color: var(--moss); font-weight: 650; margin: 14px 0 0; }
 .button-outline { background: transparent; color: var(--ink); }
-.billing-terms-link {
+.terms-link {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -285,7 +283,7 @@ code { display: block; font: 13px ui-monospace, SFMono-Regular, monospace; overf
   .how li { grid-template-columns: 36px 1fr; }
   .how li span { grid-column: 2; }
   .request-slip { padding: 24px 18px; box-shadow: 7px 7px 0 var(--clay); margin: 48px 0; }
-  .form-grid, .owner-grid, .subscription, .business-settings { grid-template-columns: 1fr; }
+  .form-grid, .owner-grid, .business-settings { grid-template-columns: 1fr; }
   .metrics { grid-template-columns: 1fr 1fr; }
   .metrics div:last-child { grid-column: span 2; border-top: 1px solid var(--line); }
   footer { flex-direction: column; }
@@ -294,8 +292,7 @@ code { display: block; font: 13px ui-monospace, SFMono-Regular, monospace; overf
   .inbox-row, .client-row { flex-direction: column; }
   .offer-assignment { grid-template-columns: 1fr; }
   .request-actions { justify-content: flex-start; }
-  .subscription, .business-settings { gap: 10px; padding: 38px 0; }
-  .subscription > div:last-child { padding-top: 6px; }
+  .business-settings { gap: 10px; padding: 38px 0; }
   .business-settings { padding-bottom: 28px; }
 }
 

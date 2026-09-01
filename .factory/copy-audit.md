@@ -30,17 +30,12 @@ Audited 2026-09-01. No landing text exceeds 22 words or uses a banned marketing 
 | Only someone with that opaque link can view its prices. | 10 |
 | Reply from the inbox. | 4 |
 | Review selected offers, contact details, and notes together. | 8 |
-| Hosted catalog plan | 3 |
-| Run one branded catalog for $12 a month | 8 |
-| Set your name, add offers, and share private links with repeat clients. | 12 |
-| Start monthly plan | 3 |
-| Opens Sociobot checkout | 3 |
-| Sociobot handles billing and receipts. | 5 |
 | Clear boundaries | 2 |
 | This is not a checkout | 5 |
 | It does not charge clients, reserve stock, or promise availability. | 10 |
 | The business confirms every request directly. | 6 |
-| Private request catalogs for small businesses · Version 1.2 | 8 |
+| Private request catalogs for small businesses · Version 1.3 | 8 |
+| Original illustration generated with Azure AI Foundry. | 7 |
 | Built by Param Factory | 4 |
 
 ## Terminology

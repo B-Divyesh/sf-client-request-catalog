@@ -30,10 +30,10 @@ The factory deployment uses the same container on port 8080 with one replica and
     cargo test --manifest-path backend/Cargo.toml
     npm run test:e2e
 
-Every visitor-facing statement is registered in .factory/claims.json. The browser suite covers Entra-only ownership and branding, the demo sandbox, request privacy, individual export/deletion and minimal audit fields, opaque links, exports, the billing handoff, accessibility, mobile, keyboard, image delivery, offline failure handling, metadata, headers, and rate limits.
+Every visitor-facing statement is registered in .factory/claims.json. The browser suite covers Entra-only ownership and branding, the demo sandbox, request privacy, individual export/deletion and minimal audit fields, opaque links, exports, generated-art disclosure, accessibility, mobile, keyboard, image delivery, offline failure handling, metadata, headers, and rate limits.
 
-## Privacy and billing
+## Privacy
 
 The demo is non-persistent. Real requests store submitted contact details and selected offers so the business can reply. Owners can export or delete one request. Deletion retains only an internal request ID, action, and date.
 
-The hosted catalog plan is $12 per month. The product links to the hosted Sociobot checkout; Sociobot is the merchant of record and handles subscription billing and receipts. The request flow itself never starts checkout or charges a client.
+The request flow never starts checkout or charges a client. The footer discloses that its original request-slip illustration was generated with Azure AI Foundry.

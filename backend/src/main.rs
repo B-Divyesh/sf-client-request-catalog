@@ -14,7 +14,6 @@ use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     FromRow, Sqlite, SqlitePool,
 };
-use std::str::FromStr;
 use std::{
     collections::HashMap,
     env, fs,
@@ -22,6 +21,7 @@ use std::{
     sync::{Arc, Mutex},
     time::{Duration as StdDuration, Instant},
 };
+use std::{future::Future, str::FromStr};
 use tower_http::{
     services::{ServeDir, ServeFile},
     trace::TraceLayer,
@@ -483,9 +483,56 @@ fn app(mut state: AppState, dist_dir: PathBuf) -> Router {
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ShutdownSignal {
+    Interrupt,
+    Terminate,
+}
+
+/// Wait for either interactive interruption or the signal container runtimes
+/// use while replacing a revision. Keeping this small helper separate makes
+/// the SIGTERM path directly testable without starting a second server.
+async fn wait_for_shutdown<Interrupt, Terminate>(
+    interrupt: Interrupt,
+    terminate: Terminate,
+) -> ShutdownSignal
+where
+    Interrupt: Future<Output = ()>,
+    Terminate: Future<Output = ()>,
+{
+    tokio::select! {
+        _ = interrupt => ShutdownSignal::Interrupt,
+        _ = terminate => ShutdownSignal::Terminate,
+    }
+}
+
+#[cfg(unix)]
 async fn shutdown() {
-    let _ = tokio::signal::ctrl_c().await;
-    info!("shutdown received");
+    use tokio::signal::unix::{signal, SignalKind};
+
+    let mut sigterm = signal(SignalKind::terminate()).expect("install SIGTERM handler");
+    let signal = wait_for_shutdown(
+        async {
+            let _ = tokio::signal::ctrl_c().await;
+        },
+        async move {
+            let _ = sigterm.recv().await;
+        },
+    )
+    .await;
+    info!(?signal, "shutdown received");
+}
+
+#[cfg(not(unix))]
+async fn shutdown() {
+    let signal = wait_for_shutdown(
+        async {
+            let _ = tokio::signal::ctrl_c().await;
+        },
+        std::future::pending(),
+    )
+    .await;
+    info!(?signal, "shutdown received");
 }
 async fn open_db(path: &std::path::Path) -> Result<SqlitePool, sqlx::Error> {
     let options = SqliteConnectOptions::from_str(&format!("sqlite://{}", path.display()))?
@@ -1913,6 +1960,25 @@ mod tests {
     #[test]
     fn creates_a_valid_pdf_header() {
         assert!(simple_pdf(vec!["one request".into()]).starts_with(b"%PDF-1.4"));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn sigterm_resolves_the_graceful_shutdown_future() {
+        use tokio::time::{timeout, Duration};
+
+        let graceful_shutdown = tokio::spawn(shutdown());
+        // Poll the future once so its SIGTERM listener is installed before
+        // reproducing the container-stop signal from the verifier report.
+        tokio::task::yield_now().await;
+        // SAFETY: `shutdown` installs Tokio's SIGTERM listener above. Raising
+        // the signal here exercises the same process signal path a container
+        // runtime uses, and the listener prevents SIGTERM's default exit.
+        assert_eq!(unsafe { libc::raise(libc::SIGTERM) }, 0);
+        assert!(timeout(Duration::from_secs(2), graceful_shutdown)
+            .await
+            .expect("SIGTERM should finish graceful shutdown")
+            .is_ok());
     }
     #[tokio::test]
     async fn first_entra_owner_claim_brands_real_catalog_without_local_passwords() {

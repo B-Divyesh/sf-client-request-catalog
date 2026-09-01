@@ -126,11 +126,19 @@ test('@claim:individual-request-privacy @claim:deletion-audit-minimal one-reques
   expect(JSON.stringify(audit)).not.toContain('first@example.test');
 });
 
-test('@claim:hosted-subscription monthly plan hands off to Sociobot checkout', async ({ page }) => {
+test('operator-gated checkout is not advertised', async ({ page }) => {
   await page.goto('/');
-  const checkout = page.locator('[data-subscription-checkout]').first();
-  await expect(checkout).toHaveText(/Start monthly plan/);
-  await expect(checkout).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/client-request-catalog/checkout?plan=monthly');
+  await expect(page.locator('[data-subscription-checkout]')).toHaveCount(0);
+  await expect(page.locator('a[href*="api.sociobot.in/api/v1/products"]')).toHaveCount(0);
+  await expect(page.getByText(/\$12 a month|Start monthly plan|Sociobot checkout/i)).toHaveCount(0);
+  await page.goto('/terms');
+  await expect(page.locator('a[href*="api.sociobot.in/api/v1/products"]')).toHaveCount(0);
+  await expect(page.getByText(/\$12 a month|Start monthly plan|Sociobot checkout/i)).toHaveCount(0);
+});
+
+test('@claim:generated-art-disclosure footer discloses the generated illustration', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('footer')).toContainText('Original illustration generated with Azure AI Foundry.');
 });
 
 test('@claim:no-trackers and @claim:no-checkout use no third-party request', async ({ page }) => {
@@ -146,7 +154,7 @@ test('@claim:no-trackers and @claim:no-checkout use no third-party request', asy
   expect([...origins]).toEqual(['http://127.0.0.1:8123']);
 });
 
-test('@claim:entra-owner-auth owner identity uses Sociobot Entra and mobile billing target is at least 44px', async ({ page, request }) => {
+test('@claim:entra-owner-auth owner identity uses Sociobot Entra and mobile terms target is at least 44px', async ({ page, request }) => {
   const configResponse = await request.get('/api/auth/config', { headers: { 'x-forwarded-for': '198.51.100.81' } });
   expect(configResponse.status()).toBe(200);
   const config = await configResponse.json() as { authority: string; client_id: string; redirect_uri: string };
@@ -165,7 +173,7 @@ test('@claim:entra-owner-auth owner identity uses Sociobot Entra and mobile bill
   await page.goto('/owner');
   await expect(page.locator('input[type="password"]')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Sign in with Microsoft' })).toBeVisible();
-  const termsBox = await page.getByRole('link', { name: 'Read plan and billing terms' }).boundingBox();
+  const termsBox = await page.getByRole('link', { name: 'Read request terms' }).boundingBox();
   expect(termsBox).not.toBeNull();
   expect(termsBox!.width).toBeGreaterThanOrEqual(44);
   expect(termsBox!.height).toBeGreaterThanOrEqual(44);
