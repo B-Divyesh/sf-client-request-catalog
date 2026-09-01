@@ -36,7 +36,16 @@ Browser evidence: 10 Chromium tests passed, covering desktop, 390px mobile, keyb
 
 ## Runtime and deployment
 
-The container keeps SQLite under /data/catalog-live.sqlite and starts on PORT with no required environment. It remains one product, one SQLite database, and one durable /data mount. Deployment and final live build identity are recorded below after the product-only deployment completes.
+The container keeps SQLite under /data/catalog-live.sqlite and starts on PORT with no required environment. It remains one product, one SQLite database, and one durable /data mount.
+
+Deployed the committed source through the product-only container work order:
+
+- commit and live build SHA: 1df6d4bea54d1ad77358bfe452e32affa508b721
+- container app: sf-client-request-catalog
+- durable mount: /data (single replica)
+- live health: https://client-request-catalog.sociobot.in/health returned that exact SHA and ok:true
+- live basic page check: /opt/fleet/lib/verify-url.sh passed with 592 ms load, no console errors, title, lang=en, one h1, main, and complete image alternatives
+- live first-run check: GET /api/setup returned claimed:false, confirming a new hosted business reaches the in-app setup path without a hidden server credential
 
 ## Known limits
 
