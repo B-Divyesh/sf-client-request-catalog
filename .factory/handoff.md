@@ -77,6 +77,23 @@ persists SQLite under `/data`. Deployment uses the product-owned
 `sf-client-request-catalog` Container App, its `/data` Azure Files mount, and
 an image named `sociobotregistry.azurecr.io/sf-client-request-catalog:<commit>`.
 
+## Deployment evidence
+
+- Repair source commit: `44c50a4f48126b7490b8cc9eb489099b51f6cdb8`, pushed to
+  `origin/main`.
+- ACR build `ch1sf` succeeded on 2026-09-01. It produced
+  `sociobotregistry.azurecr.io/sf-client-request-catalog:44c50a4f4812` with
+  digest `sha256:c853f163528d109cd8c4465eb89b2c0f78134d0bcecab5e5c578bd58ba465546`.
+- Deployed only the product-owned `sf-client-request-catalog` Container App.
+  Revision `sf-client-request-catalog--0000022` is healthy and serves that
+  image with its existing `/data` Azure Files mount unchanged.
+- Live `https://client-request-catalog.sociobot.in/health` returned
+  `{"ok":true,"build_sha":"44c50a4f48126b7490b8cc9eb489099b51f6cdb8"}`.
+- Live browser checks confirmed the footer disclosure, no product checkout
+  link or paid-plan copy on `/` or `/terms`, same-origin landing/demo requests,
+  keyboard skip navigation, 390 px dark/reduced-motion axe scans with no
+  serious/critical violations, and no console errors.
+
 ## Known gaps / next step
 
 There is intentionally no paid tier or checkout link until the factory
