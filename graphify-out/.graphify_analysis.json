@@ -3,11 +3,15 @@
     "0": [
       "arc",
       "backend_src_main_appstate",
+      "backend_src_main_claim_workspace",
       "backend_src_main_create_client",
+      "backend_src_main_create_demo_request",
       "backend_src_main_create_product",
       "backend_src_main_create_request",
+      "backend_src_main_csv_response",
       "backend_src_main_delete_request",
       "backend_src_main_delete_requests",
+      "backend_src_main_deletion_audit",
       "backend_src_main_error",
       "backend_src_main_export_csv",
       "backend_src_main_export_pdf",
@@ -17,11 +21,13 @@
       "backend_src_main_not_found",
       "backend_src_main_owner",
       "backend_src_main_rate_limit",
-      "backend_src_main_replace_client_offers",
       "backend_src_main_revoke_client",
       "backend_src_main_set_client_offers",
+      "backend_src_main_setup_status",
+      "backend_src_main_update_settings",
       "backend_src_main_update_status",
-      "backend_src_main_validated_offer_ids",
+      "backend_src_main_valid_passphrase",
+      "backend_src_main_validate_request",
       "backend_src_main_with_security_headers",
       "hashmap",
       "headermap",
@@ -32,44 +38,82 @@
       "path",
       "request",
       "response",
-      "sqlite",
       "state",
-      "statuscode",
-      "transaction"
+      "statuscode"
     ],
     "1": [
       "backend_src_main",
-      "backend_src_main_catalog",
-      "backend_src_main_clientinput",
-      "backend_src_main_clientlink",
-      "backend_src_main_clientlinkrow",
-      "backend_src_main_create_demo_request",
+      "backend_src_main_app",
+      "backend_src_main_client_offer_assignments_keep_catalogs_and_request_validation_separate",
+      "backend_src_main_configured_state",
       "backend_src_main_creates_a_valid_pdf_header",
-      "backend_src_main_csv_response",
-      "backend_src_main_demo_catalog",
-      "backend_src_main_get_demo_catalog",
-      "backend_src_main_inboxrow",
-      "backend_src_main_offerassignmentinput",
-      "backend_src_main_overview",
-      "backend_src_main_product",
-      "backend_src_main_productinput",
+      "backend_src_main_existing_database_serves_health_without_startup_writes",
+      "backend_src_main_first_owner_claim_brands_real_catalog_without_a_server_file_code",
+      "backend_src_main_forty_concurrent_valid_requests_are_all_saved_once",
+      "backend_src_main_hash_passphrase",
+      "backend_src_main_individual_request_export_and_deletion_keep_other_people_and_audit_safe",
+      "backend_src_main_init_db",
+      "backend_src_main_legacy_public_token_is_revoked_without_duplicate_offers",
+      "backend_src_main_load_owner_configuration",
+      "backend_src_main_main",
+      "backend_src_main_migrate_db",
+      "backend_src_main_open_db",
       "backend_src_main_random_token",
-      "backend_src_main_request_rows",
-      "backend_src_main_requestinput",
-      "backend_src_main_requestitem",
-      "backend_src_main_simple_pdf",
-      "backend_src_main_statusinput",
+      "backend_src_main_rate_limit_covers_api_and_404_routes_but_not_health",
+      "backend_src_main_replace_client_offers",
+      "backend_src_main_request",
+      "backend_src_main_seed_test_catalog",
+      "backend_src_main_shutdown",
+      "backend_src_main_test_state",
+      "backend_src_main_unclaimed_state",
       "backend_src_main_valid_email",
-      "backend_src_main_validate_request",
       "backend_src_main_validates_normal_email",
       "backend_src_main_visible_offer_ids",
       "backend_src_main_window",
+      "body",
+      "error",
       "instant",
-      "option",
-      "string",
-      "vec"
+      "pathbuf",
+      "result",
+      "router",
+      "sqlite",
+      "sqlitepool",
+      "tempdir",
+      "transaction"
     ],
     "2": [
+      "src_main",
+      "src_main_additem",
+      "src_main_api",
+      "src_main_app",
+      "src_main_basket",
+      "src_main_catalog",
+      "src_main_clientlink",
+      "src_main_download",
+      "src_main_esc",
+      "src_main_focusrouteheading",
+      "src_main_inboxrow",
+      "src_main_item",
+      "src_main_itemcount",
+      "src_main_legal",
+      "src_main_loadcatalog",
+      "src_main_loadowner",
+      "src_main_loginscreen",
+      "src_main_money",
+      "src_main_notfound",
+      "src_main_openownerentry",
+      "src_main_ownerdata",
+      "src_main_product",
+      "src_main_rendercatalog",
+      "src_main_renderlanding",
+      "src_main_renderowner",
+      "src_main_setmeta",
+      "src_main_setupscreen",
+      "src_main_setupstatus",
+      "src_main_shell",
+      "src_main_submitrequest"
+    ],
+    "3": [
       "axe_core_playwright",
       "eslint",
       "package",
@@ -98,58 +142,32 @@
       "typescript_eslint",
       "vite"
     ],
-    "3": [
-      "src_main",
-      "src_main_additem",
-      "src_main_api",
-      "src_main_app",
-      "src_main_basket",
-      "src_main_catalog",
-      "src_main_clientlink",
-      "src_main_download",
-      "src_main_esc",
-      "src_main_focusrouteheading",
-      "src_main_inboxrow",
-      "src_main_item",
-      "src_main_itemcount",
-      "src_main_legal",
-      "src_main_loadcatalog",
-      "src_main_loadowner",
-      "src_main_loginscreen",
-      "src_main_money",
-      "src_main_notfound",
-      "src_main_ownerdata",
-      "src_main_product",
-      "src_main_rendercatalog",
-      "src_main_renderlanding",
-      "src_main_renderowner",
-      "src_main_setmeta",
-      "src_main_shell",
-      "src_main_submitrequest"
-    ],
     "4": [
-      "backend_src_main_app",
+      "backend_src_main_business_name",
+      "backend_src_main_catalog",
       "backend_src_main_client_links",
-      "backend_src_main_client_offer_assignments_keep_catalogs_and_request_validation_separate",
-      "backend_src_main_existing_database_serves_health_without_startup_writes",
-      "backend_src_main_forty_concurrent_valid_requests_are_all_saved_once",
-      "backend_src_main_individual_request_export_and_deletion_keep_other_people_and_audit_safe",
-      "backend_src_main_init_db",
-      "backend_src_main_legacy_public_token_is_revoked_without_duplicate_offers",
-      "backend_src_main_main",
-      "backend_src_main_migrate_db",
-      "backend_src_main_open_db",
-      "backend_src_main_rate_limit_covers_api_and_404_routes_but_not_health",
-      "backend_src_main_request",
-      "backend_src_main_shutdown",
-      "backend_src_main_test_state",
-      "body",
-      "error",
-      "pathbuf",
-      "result",
-      "router",
-      "sqlitepool",
-      "tempdir"
+      "backend_src_main_clientinput",
+      "backend_src_main_clientlink",
+      "backend_src_main_clientlinkrow",
+      "backend_src_main_deletionauditrow",
+      "backend_src_main_demo_catalog",
+      "backend_src_main_get_demo_catalog",
+      "backend_src_main_inboxrow",
+      "backend_src_main_offerassignmentinput",
+      "backend_src_main_overview",
+      "backend_src_main_product",
+      "backend_src_main_productinput",
+      "backend_src_main_request_rows",
+      "backend_src_main_requestinput",
+      "backend_src_main_requestitem",
+      "backend_src_main_settingsinput",
+      "backend_src_main_setupinput",
+      "backend_src_main_simple_pdf",
+      "backend_src_main_statusinput",
+      "backend_src_main_validated_offer_ids",
+      "option",
+      "string",
+      "vec"
     ],
     "5": [
       "ref_dom",
@@ -194,6 +212,7 @@
     "8": [
       "e2e_catalog_spec",
       "e2e_catalog_spec_clientip",
+      "e2e_catalog_spec_ensureworkspace",
       "e2e_catalog_spec_ownerheaders"
     ],
     "9": [
@@ -213,11 +232,11 @@
     ]
   },
   "cohesion": {
-    "0": 0.19663865546218487,
-    "1": 0.15862068965517243,
-    "2": 0.07407407407407407,
-    "3": 0.15669515669515668,
-    "4": 0.17316017316017315,
+    "0": 0.19163292847503374,
+    "1": 0.12802275960170698,
+    "2": 0.15172413793103448,
+    "3": 0.07407407407407407,
+    "4": 0.14666666666666667,
     "5": 0.09523809523809523,
     "6": 0.3333333333333333,
     "7": 0.3333333333333333,
@@ -232,21 +251,26 @@
     {
       "id": "backend_src_main_appstate",
       "label": "AppState",
-      "degree": 26
+      "degree": 34
     },
     {
       "id": "backend_src_main_error",
       "label": "error()",
-      "degree": 21
+      "degree": 22
     },
     {
       "id": "backend_src_main_overview",
       "label": "Overview",
-      "degree": 15
+      "degree": 16
     },
     {
       "id": "backend_src_main_owner",
       "label": "owner()",
+      "degree": 16
+    },
+    {
+      "id": "backend_src_main_test_state",
+      "label": "test_state()",
       "degree": 14
     },
     {
@@ -257,6 +281,11 @@
     {
       "id": "src_main_shell",
       "label": "shell()",
+      "degree": 13
+    },
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
       "degree": 12
     },
     {
@@ -265,53 +294,43 @@
       "degree": 12
     },
     {
-      "id": "tsconfig_compileroptions",
-      "label": "compilerOptions",
-      "degree": 12
-    },
-    {
-      "id": "backend_src_main_test_state",
-      "label": "test_state()",
-      "degree": 12
-    },
-    {
-      "id": "backend_src_main_export_single_csv",
-      "label": "export_single_csv()",
+      "id": "backend_src_main_app",
+      "label": "app()",
       "degree": 11
     }
   ],
   "surprises": [
     {
-      "source": "app()",
-      "target": "AppState",
+      "source": "Overview",
+      "target": "HeaderMap",
       "source_files": [
         "backend/src/main.rs",
-        "backend/src/main.rs"
+        ""
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
       "note": "Bridges community 0 \u2192 community 4"
     },
     {
-      "source": "AppState",
-      "target": "Window",
+      "source": "open_db()",
+      "target": "Path",
       "source_files": [
         "backend/src/main.rs",
-        "backend/src/main.rs"
+        ""
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
       "note": "Bridges community 0 \u2192 community 1"
     },
     {
-      "source": "init_db()",
-      "target": "random_token()",
+      "source": "load_owner_configuration()",
+      "target": "Option",
       "source_files": [
         "backend/src/main.rs",
-        "backend/src/main.rs"
+        ""
       ],
       "confidence": "EXTRACTED",
-      "relation": "calls",
+      "relation": "references",
       "note": "Bridges community 4 \u2192 community 1"
     }
   ],
