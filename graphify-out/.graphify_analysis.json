@@ -1,6 +1,81 @@
 {
   "communities": {
     "0": [
+      "backend_src_main",
+      "backend_src_main_app",
+      "backend_src_main_authconfigresponse",
+      "backend_src_main_authorized_request",
+      "backend_src_main_business_name",
+      "backend_src_main_catalog",
+      "backend_src_main_client_links",
+      "backend_src_main_client_offer_assignments_keep_catalogs_and_request_validation_separate",
+      "backend_src_main_clientinput",
+      "backend_src_main_clientlink",
+      "backend_src_main_clientlinkrow",
+      "backend_src_main_configured_state",
+      "backend_src_main_creates_a_valid_pdf_header",
+      "backend_src_main_deletionauditrow",
+      "backend_src_main_demo_catalog",
+      "backend_src_main_entraclaims",
+      "backend_src_main_existing_database_serves_health_without_startup_writes",
+      "backend_src_main_first_entra_owner_claim_brands_real_catalog_without_local_passwords",
+      "backend_src_main_forty_concurrent_valid_requests_are_all_saved_once",
+      "backend_src_main_inboxrow",
+      "backend_src_main_individual_request_export_and_deletion_keep_other_people_and_audit_safe",
+      "backend_src_main_init_db",
+      "backend_src_main_jwkdocument",
+      "backend_src_main_jwksdocument",
+      "backend_src_main_legacy_public_token_is_revoked_without_duplicate_offers",
+      "backend_src_main_load_owner_configuration",
+      "backend_src_main_main",
+      "backend_src_main_migrate_db",
+      "backend_src_main_migration_removes_local_password_ownership_but_keeps_catalog_branding",
+      "backend_src_main_offerassignmentinput",
+      "backend_src_main_oidcdiscovery",
+      "backend_src_main_open_db",
+      "backend_src_main_overview",
+      "backend_src_main_parsed_price",
+      "backend_src_main_product",
+      "backend_src_main_productimportinput",
+      "backend_src_main_productinput",
+      "backend_src_main_productupdate",
+      "backend_src_main_random_token",
+      "backend_src_main_rate_limit_covers_api_and_404_routes_but_not_health",
+      "backend_src_main_request",
+      "backend_src_main_request_rows",
+      "backend_src_main_requestinput",
+      "backend_src_main_requestitem",
+      "backend_src_main_seed_test_catalog",
+      "backend_src_main_settingsinput",
+      "backend_src_main_setupinput",
+      "backend_src_main_shutdown",
+      "backend_src_main_shutdownsignal",
+      "backend_src_main_sigterm_resolves_the_graceful_shutdown_future",
+      "backend_src_main_simple_pdf",
+      "backend_src_main_statusinput",
+      "backend_src_main_test_state",
+      "backend_src_main_testidentity",
+      "backend_src_main_unclaimed_state",
+      "backend_src_main_valid_email",
+      "backend_src_main_validate_request",
+      "backend_src_main_validated_offer_ids",
+      "backend_src_main_validates_normal_email",
+      "backend_src_main_visible_offer_ids",
+      "backend_src_main_wait_for_shutdown",
+      "body",
+      "error",
+      "interrupt",
+      "option",
+      "pathbuf",
+      "result",
+      "router",
+      "sqlitepool",
+      "string",
+      "tempdir",
+      "terminate",
+      "vec"
+    ],
+    "1": [
       "src_auth",
       "src_auth_accountlabel",
       "src_auth_application",
@@ -46,114 +121,19 @@
       "src_main_renderdemoclient",
       "src_main_renderlanding",
       "src_main_renderowner",
+      "src_main_requestpdf",
       "src_main_restoreroutefocus",
       "src_main_setmeta",
       "src_main_setupscreen",
       "src_main_setupstatus",
       "src_main_shell",
       "src_main_signinscreen",
+      "src_main_simplepdf",
       "src_main_splitcsvline",
       "src_main_submitrequest",
       "src_main_wrongownerscreen"
     ],
-    "1": [
-      "arc",
-      "backend_src_main",
-      "backend_src_main_authconfigresponse",
-      "backend_src_main_authstate",
-      "backend_src_main_authstate_authority",
-      "backend_src_main_authstate_discovery_url",
-      "backend_src_main_authstate_refresh",
-      "backend_src_main_business_name",
-      "backend_src_main_cachedoidc",
-      "backend_src_main_catalog",
-      "backend_src_main_client_links",
-      "backend_src_main_clientinput",
-      "backend_src_main_clientlink",
-      "backend_src_main_clientlinkrow",
-      "backend_src_main_create_demo_request",
-      "backend_src_main_creates_a_valid_pdf_header",
-      "backend_src_main_deletionauditrow",
-      "backend_src_main_demo_catalog",
-      "backend_src_main_entraclaims",
-      "backend_src_main_get_demo_catalog",
-      "backend_src_main_inboxrow",
-      "backend_src_main_jwkdocument",
-      "backend_src_main_jwksdocument",
-      "backend_src_main_offerassignmentinput",
-      "backend_src_main_oidcdiscovery",
-      "backend_src_main_overview",
-      "backend_src_main_product",
-      "backend_src_main_productimportinput",
-      "backend_src_main_productinput",
-      "backend_src_main_productupdate",
-      "backend_src_main_random_token",
-      "backend_src_main_request_rows",
-      "backend_src_main_requestinput",
-      "backend_src_main_requestitem",
-      "backend_src_main_seed_test_catalog",
-      "backend_src_main_settingsinput",
-      "backend_src_main_setupinput",
-      "backend_src_main_simple_pdf",
-      "backend_src_main_statusinput",
-      "backend_src_main_testidentity",
-      "backend_src_main_valid_email",
-      "backend_src_main_validate_request",
-      "backend_src_main_validates_normal_email",
-      "backend_src_main_window",
-      "client",
-      "decodingkey",
-      "hashmap",
-      "instant",
-      "mutex",
-      "option",
-      "string",
-      "vec"
-    ],
     "2": [
-      "backend_src_main_app",
-      "backend_src_main_authorized_request",
-      "backend_src_main_authstate_for_test",
-      "backend_src_main_authstate_from_env",
-      "backend_src_main_client_offer_assignments_keep_catalogs_and_request_validation_separate",
-      "backend_src_main_configured_state",
-      "backend_src_main_existing_database_serves_health_without_startup_writes",
-      "backend_src_main_first_entra_owner_claim_brands_real_catalog_without_local_passwords",
-      "backend_src_main_forty_concurrent_valid_requests_are_all_saved_once",
-      "backend_src_main_individual_request_export_and_deletion_keep_other_people_and_audit_safe",
-      "backend_src_main_init_db",
-      "backend_src_main_legacy_public_token_is_revoked_without_duplicate_offers",
-      "backend_src_main_load_owner_configuration",
-      "backend_src_main_main",
-      "backend_src_main_migrate_db",
-      "backend_src_main_migration_removes_local_password_ownership_but_keeps_catalog_branding",
-      "backend_src_main_open_db",
-      "backend_src_main_parsed_price",
-      "backend_src_main_rate_limit_covers_api_and_404_routes_but_not_health",
-      "backend_src_main_replace_client_offers",
-      "backend_src_main_request",
-      "backend_src_main_shutdown",
-      "backend_src_main_shutdownsignal",
-      "backend_src_main_sigterm_resolves_the_graceful_shutdown_future",
-      "backend_src_main_test_state",
-      "backend_src_main_unclaimed_state",
-      "backend_src_main_validated_offer_ids",
-      "backend_src_main_visible_offer_ids",
-      "backend_src_main_wait_for_shutdown",
-      "body",
-      "error",
-      "interrupt",
-      "pathbuf",
-      "result",
-      "router",
-      "self",
-      "sqlite",
-      "sqlitepool",
-      "tempdir",
-      "terminate",
-      "transaction"
-    ],
-    "3": [
       "backend_src_main_appstate",
       "backend_src_main_auth_config",
       "backend_src_main_auth_error",
@@ -163,6 +143,7 @@
       "backend_src_main_authorize_owner",
       "backend_src_main_claim_workspace",
       "backend_src_main_create_client",
+      "backend_src_main_create_demo_request",
       "backend_src_main_create_product",
       "backend_src_main_create_request",
       "backend_src_main_csv_response",
@@ -175,6 +156,7 @@
       "backend_src_main_export_pdf",
       "backend_src_main_export_single_csv",
       "backend_src_main_get_catalog",
+      "backend_src_main_get_demo_catalog",
       "backend_src_main_health",
       "backend_src_main_import_products",
       "backend_src_main_not_found",
@@ -196,7 +178,7 @@
       "state",
       "statuscode"
     ],
-    "4": [
+    "3": [
       "axe_core_playwright",
       "azure_msal_browser",
       "eslint",
@@ -206,6 +188,7 @@
       "package_devdependencies",
       "package_devdependencies_axe_core_playwright",
       "package_devdependencies_eslint",
+      "package_devdependencies_pdfjs_dist",
       "package_devdependencies_playwright_core",
       "package_devdependencies_playwright_test",
       "package_devdependencies_types_node",
@@ -215,6 +198,8 @@
       "package_name",
       "package_private",
       "package_scripts",
+      "package_scripts_audit_copy",
+      "package_scripts_audit_copy_update",
       "package_scripts_build",
       "package_scripts_check",
       "package_scripts_dev",
@@ -224,6 +209,7 @@
       "package_scripts_test_runtime",
       "package_scripts_typecheck",
       "package_version",
+      "pdfjs_dist",
       "playwright_core",
       "playwright_test",
       "types_node",
@@ -231,7 +217,7 @@
       "typescript_eslint",
       "vite"
     ],
-    "5": [
+    "4": [
       "ref_dom",
       "ref_dom_iterable",
       "ref_e2e",
@@ -254,7 +240,50 @@
       "tsconfig_compileroptions_usedefineforclassfields",
       "tsconfig_include"
     ],
+    "5": [
+      "arc",
+      "backend_src_main_authstate",
+      "backend_src_main_authstate_authority",
+      "backend_src_main_authstate_discovery_url",
+      "backend_src_main_authstate_for_test",
+      "backend_src_main_authstate_from_env",
+      "backend_src_main_authstate_refresh",
+      "backend_src_main_cachedoidc",
+      "backend_src_main_window",
+      "client",
+      "decodingkey",
+      "hashmap",
+      "instant",
+      "mutex",
+      "self"
+    ],
     "6": [
+      "scripts_copy_audit",
+      "scripts_copy_audit_banned",
+      "scripts_copy_audit_clean",
+      "scripts_copy_audit_escapecell",
+      "scripts_copy_audit_flag",
+      "scripts_copy_audit_outputurl",
+      "scripts_copy_audit_preview",
+      "scripts_copy_audit_root",
+      "scripts_copy_audit_table",
+      "scripts_copy_audit_waitforserver",
+      "scripts_copy_audit_words"
+    ],
+    "7": [
+      "scripts_verify_live",
+      "scripts_verify_live_consoleerrors",
+      "scripts_verify_live_failures",
+      "scripts_verify_live_internallinkstatuses",
+      "scripts_verify_live_oneclickurl",
+      "scripts_verify_live_pageerrors",
+      "scripts_verify_live_pdfdownloadpromise",
+      "scripts_verify_live_pdftext",
+      "scripts_verify_live_requests",
+      "scripts_verify_live_results",
+      "scripts_verify_live_seeded"
+    ],
+    "8": [
       "factory_qa_backend_temp",
       "factory_qa_backend_temp_baserequest",
       "factory_qa_backend_temp_call",
@@ -263,7 +292,15 @@
       "factory_qa_backend_temp_results",
       "factory_qa_backend_temp_summary"
     ],
-    "7": [
+    "9": [
+      "e2e_catalog_spec",
+      "e2e_catalog_spec_authenticateownerpage",
+      "e2e_catalog_spec_clientip",
+      "e2e_catalog_spec_ensureworkspace",
+      "e2e_catalog_spec_extractpdftext",
+      "e2e_catalog_spec_ownerheaders"
+    ],
+    "10": [
       "factory_qa_live_temp",
       "factory_qa_live_temp_auditpage",
       "factory_qa_live_temp_consoleerrors",
@@ -271,50 +308,55 @@
       "factory_qa_live_temp_requests",
       "factory_qa_live_temp_results"
     ],
-    "8": [
-      "e2e_catalog_spec",
-      "e2e_catalog_spec_authenticateownerpage",
-      "e2e_catalog_spec_clientip",
-      "e2e_catalog_spec_ensureworkspace",
-      "e2e_catalog_spec_ownerheaders"
+    "11": [
+      "backend_src_main_replace_client_offers",
+      "sqlite",
+      "transaction"
     ],
-    "9": [
+    "12": [
       "tests_runtime_claims",
       "tests_runtime_claims_start",
       "tests_runtime_claims_stop"
     ],
-    "10": [
+    "13": [
       "eslint_config"
     ],
-    "11": [
+    "14": [
       "pkg_client_request_catalog_server"
     ],
-    "12": [
+    "15": [
       "playwright_config"
     ],
-    "13": [
+    "16": [
+      "scripts_prepare_e2e"
+    ],
+    "17": [
       "tests_client_test"
     ],
-    "14": [
+    "18": [
       "vite_config"
     ]
   },
   "cohesion": {
-    "0": 0.07547169811320754,
-    "1": 0.09049773755656108,
-    "2": 0.09024390243902439,
-    "3": 0.23902439024390243,
-    "4": 0.06060606060606061,
-    "5": 0.09523809523809523,
-    "6": 0.3333333333333333,
-    "7": 0.3333333333333333,
-    "8": 0.5,
-    "9": 0.6666666666666666,
-    "10": 1.0,
-    "11": 1.0,
-    "12": 1.0,
+    "0": 0.076103500761035,
+    "1": 0.07272727272727272,
+    "2": 0.22591362126245848,
+    "3": 0.05405405405405406,
+    "4": 0.09523809523809523,
+    "5": 0.1523809523809524,
+    "6": 0.2545454545454545,
+    "7": 0.18181818181818182,
+    "8": 0.3333333333333333,
+    "9": 0.4,
+    "10": 0.3333333333333333,
+    "11": 0.6666666666666666,
+    "12": 0.6666666666666666,
     "13": 1.0,
-    "14": 1.0
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0
   },
   "gods": [
     {
@@ -325,7 +367,7 @@
     {
       "id": "backend_src_main_error",
       "label": "error()",
-      "degree": 24
+      "degree": 25
     },
     {
       "id": "backend_src_main_authorize_owner",
@@ -343,28 +385,28 @@
       "degree": 14
     },
     {
-      "id": "backend_src_main_test_state",
-      "label": "test_state()",
-      "degree": 14
-    },
-    {
       "id": "backend_src_main_create_client",
       "label": "create_client()",
       "degree": 14
     },
     {
+      "id": "backend_src_main_test_state",
+      "label": "test_state()",
+      "degree": 14
+    },
+    {
       "id": "src_main_renderowner",
       "label": "renderOwner()",
+      "degree": 14
+    },
+    {
+      "id": "backend_src_main_set_client_offers",
+      "label": "set_client_offers()",
       "degree": 13
     },
     {
       "id": "src_main_shell",
       "label": "shell()",
-      "degree": 13
-    },
-    {
-      "id": "backend_src_main_set_client_offers",
-      "label": "set_client_offers()",
       "degree": 13
     }
   ],
@@ -378,29 +420,51 @@
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
-      "note": "Bridges community 1 \u2192 community 3"
+      "note": "Bridges community 5 \u2192 community 2"
     },
     {
-      "source": "client_links()",
-      "target": "Error",
+      "source": "AppState",
+      "target": "Option",
       "source_files": [
         "backend/src/main.rs",
         ""
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
-      "note": "Bridges community 1 \u2192 community 2"
+      "note": "Bridges community 0 \u2192 community 2"
     },
     {
-      "source": "app()",
-      "target": "AppState",
+      "source": "AuthState",
+      "target": "Option",
+      "source_files": [
+        "backend/src/main.rs",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 0 \u2192 community 5"
+    },
+    {
+      "source": "replace_client_offers()",
+      "target": "Result",
+      "source_files": [
+        "backend/src/main.rs",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 0 \u2192 community 11"
+    },
+    {
+      "source": "create_client()",
+      "target": "replace_client_offers()",
       "source_files": [
         "backend/src/main.rs",
         "backend/src/main.rs"
       ],
       "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 2 \u2192 community 3"
+      "relation": "calls",
+      "note": "Bridges community 2 \u2192 community 11"
     }
   ],
   "tokens": {
