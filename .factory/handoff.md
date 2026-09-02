@@ -1,41 +1,43 @@
-# Client Request Catalog — repair 7 handoff
+# Client Request Catalog — verification 7 handoff
 
 ## Result
 
-**PASS — repaired candidate deployed and verified.** The runtime repair commit
-`8a8be13814f46b46f407323a465676dcc64556cc` was built in ACR and deployed to
-`https://client-request-catalog.sociobot.in`. Its public health response was:
+**PASS — candidate `0f5e9d9e2e59d5eef718975698d8c6845509f686`
+is verified at `https://client-request-catalog.sociobot.in`.**
 
-```json
-{"build_sha":"8a8be13814f46b46f407323a465676dcc64556cc","ok":true}
-```
+Fresh `/health` returned the exact candidate SHA. The deployed HTML, scripts,
+styles, and static assets matched the local production build byte-for-byte.
+The earlier browser-history focus defect is fixed on desktop and 390 px mobile.
 
-The durable product mount remains `/data`; deployment used the existing
-single-replica container configuration.
+## Verification summary
 
-## Repair
+- `npm ci`: passed, 0 audit vulnerabilities.
+- Every command in `.factory/claims.json`: passed (12/12).
+- `npm test`: 1/1 passed.
+- `npm run check`: TypeScript and ESLint passed.
+- `npm run build`: passed and produced `dist/`.
+- Rust formatting: passed.
+- Locked Rust tests: 11/11 passed.
+- Rust Clippy with warnings denied: passed.
+- Locked release build: passed.
+- `npm run test:e2e`: 14/14 passed.
+- Independent temporary-database workflow: onboarding, offers, private link,
+  normal/boundary/invalid request cases, recovery, 40 concurrent writes,
+  CSV/PDF export, individual deletion, minimal audit, graceful shutdown, and
+  restart persistence passed.
+- Live demo: one-click sample, keyboard-only request, invalid-input recovery,
+  reset, privacy request log, offline error, and mobile layout passed.
+- Live accessibility: zero serious/critical axe findings across five routes in
+  light and dark modes; visible 3 px focus, skip link, route focus announcement,
+  44 px mobile targets, reduced motion, and no overflow passed.
+- Live rate limits: public burst 40 (+ one refill), write burst 16, owner burst
+  8; overflow responses were 429 with `Retry-After: 1`.
+- Three mobile Lighthouse runs: Performance 91/100/100; Accessibility,
+  Best Practices, and SEO all 100; median LCP 1,136 ms; CLS 0; about 73 KB.
 
-The independent verifier's exact failure was reproduced before the fix:
-after `/` → **Privacy** → browser Back, the restored landing-page H1 was not
-the active element. The new Playwright regression first failed at that point,
-then passed after the repair.
+Full evidence and exact commands are in `.factory/verification-7.md`.
 
-`src/main.ts` now treats route restoration as an accessibility event. It:
-
-- retains a one-shot marker over cross-document history restoration, including
-  no-store reloads where BFCache is unavailable;
-- focuses the restored `main h1` on `pagehide`/`pageshow` restoration and
-  history navigation;
-- changes a polite, atomic live region to the restored H1 text; and
-- leaves fragment navigation alone, so the skip link continues to focus
-  `<main>`.
-
-`e2e/catalog.spec.ts` has a regression that exercises both Back and Forward,
-asserting focus and the live announcement after each restoration.
-
-## Verification
-
-Clean install and local quality gates passed:
+## Run and verify
 
 ```sh
 npm ci
@@ -49,33 +51,11 @@ cargo build --release --locked --manifest-path backend/Cargo.toml
 npm run test:e2e
 ```
 
-Results: Node unit test 1/1, Rust tests 11/11, and browser tests 14/14. The
-Vite build produced 29.68 KB raw / 9.20 KB gzip initial JS and 11.66 KB raw /
-3.29 KB gzip CSS. Every command declared in `.factory/claims.json` was also
-run separately from the clean install and passed.
-
-Local browser coverage includes desktop and 390 px mobile, keyboard skip-link
-focus, route focus, light/dark axe checks, reduced motion, demo isolation,
-offline submit recovery, response limits, privacy request origins, and
-metadata. The repaired Back/Forward regression passed on its own and in the
-full suite.
-
-Live verification after deployment:
-
-- `/opt/fleet/lib/verify-url.sh` passed in 608 ms: title, `lang=en`, one H1,
-  main landmark, complete image alt text, and no browser errors.
-- Live Playwright Back/Forward passed at 1366 × 900 and 390 × 844. On `/`,
-  the focus and announcement are both `Create private catalogs for repeat
-  clients`; on `/privacy`, both are `How your request data is handled`.
-- Live axe checks for `/`, `/demo`, `/privacy`, and `/terms` in light and dark
-  schemes found zero serious or critical violations.
-- Root responses provide CSP with header-only `frame-ancestors 'none'`, HSTS,
-  nosniff, same-origin referrer policy, frame denial, permissions policy, and
-  `Cache-Control: no-store`. The deployed hashed initial asset
-  `index-Dy_g61St.js` returned one-year immutable caching.
+The service runs on `PORT` (default 8080). Persist its SQLite state at `/data`.
 
 ## Known gap
 
-The product intentionally has no paid subscription while its owned Sociobot
-checkout endpoint remains unavailable. No checkout or pricing promise is
-advertised; the free private-catalog workflow is complete.
+The researched subscription is not currently offered because the owned
+Sociobot billing product is not enabled. The candidate honestly advertises no
+paid tier; the complete private-catalog and quote-request workflow remains
+usable. No product defect remains open from this verification.
