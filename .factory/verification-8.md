@@ -1,8 +1,8 @@
 # Independent verification 8 — PASS
 
-**Candidate:** `466f5075d08dfb928a70a5c55525c488d33f8dd5`  
-**Live URL:** `https://client-request-catalog.sociobot.in`  
-**Verified:** 2026-09-02 UTC  
+**Candidate:** `466f5075d08dfb928a70a5c55525c488d33f8dd5`
+**Live URL:** `https://client-request-catalog.sociobot.in`
+**Verified:** 2026-09-02 UTC
 **Verdict:** **PASS — ready for release.**
 
 No critical, high, medium, or low product defect was found. The live health
