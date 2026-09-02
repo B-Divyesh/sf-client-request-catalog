@@ -5,6 +5,10 @@ import {
   type Page,
 } from "@playwright/test";
 import { AxeBuilder } from "@axe-core/playwright";
+import { readFile } from "node:fs/promises";
+import { DatabaseSync } from "node:sqlite";
+import { join } from "node:path";
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 const authToken = "e2e-test-entra-token";
 let ip = 100;
@@ -54,6 +58,21 @@ async function ensureWorkspace(request: APIRequestContext) {
       ).status(),
     ).toBe(200);
   }
+}
+
+async function extractPdfText(bytes: Uint8Array) {
+  const document = await getDocument({ data: new Uint8Array(bytes) }).promise;
+  const pages: string[] = [];
+  for (let number = 1; number <= document.numPages; number += 1) {
+    const page = await document.getPage(number);
+    const content = await page.getTextContent();
+    pages.push(
+      content.items
+        .map((item) => ("str" in item ? item.str : ""))
+        .join(" "),
+    );
+  }
+  return { pageCount: document.numPages, text: pages.join("\n") };
 }
 
 test("@claim:one-click-owner-demo landing opens a filled isolated owner workspace in one click", async ({
@@ -519,7 +538,7 @@ test("@claim:private-prices opaque links hide and revoke prices", async ({
   ).toBe(410);
 });
 
-test("@claim:request-inbox valid browser requests reach the owner inbox", async ({
+test("@claim:request-inbox @claim:request-data-stored valid browser requests reach the owner inbox with every disclosed field", async ({
   page,
   request,
 }) => {
@@ -532,15 +551,92 @@ test("@claim:request-inbox valid browser requests reach the owner inbox", async 
   await clientIp(page, 14);
   await page.goto("/?client=" + token);
   await page.locator(".add").first().click();
+  await page.locator(".add").first().click();
   await page.locator('input[name="name"]').fill("Taylor Requester");
   await page.locator('input[name="email"]').fill("taylor@example.test");
+  await page.locator('input[name="phone"]').fill("+1 555 0199");
+  await page.locator('input[name="reference"]').fill("TAYLOR-PO-44");
+  await page
+    .locator('textarea[name="note"]')
+    .fill("Please call before the visit.");
   await page.getByRole("button", { name: /send request/i }).click();
   await expect(page.locator("#form-message")).toContainText(
     /Request CRC-\d{6} is in the inbox/,
   );
+  const receipt = await page.locator("#form-message").textContent();
+  const reference = receipt?.match(/CRC-\d{6}/)?.[0];
+  expect(reference).toBeTruthy();
+  const storedReference = reference!;
+  const overview = await (
+    await request.get("/api/admin/overview", { headers: ownerHeaders() })
+  ).json();
+  const stored = overview.requests.find(
+    (row: { reference: string }) => row.reference === storedReference,
+  );
+  expect(stored).toMatchObject({
+    reference: storedReference,
+    name: "Taylor Requester",
+    email: "taylor@example.test",
+    phone: "+1 555 0199",
+    client_reference: "TAYLOR-PO-44",
+    note: "Please call before the visit.",
+    status: "new",
+    items: "Quarterly maintenance visit x 2",
+  });
+
+  const database = new DatabaseSync(
+    join("/tmp/client-request-catalog-e2e", "catalog-live.sqlite"),
+    { readOnly: true },
+  );
+  try {
+    const columns = database
+      .prepare("PRAGMA table_info(requests)")
+      .all()
+      .map((column) => (column as { name: string }).name);
+    expect(columns).toEqual([
+      "id",
+      "reference",
+      "client_id",
+      "name",
+      "email",
+      "phone",
+      "client_reference",
+      "note",
+      "status",
+      "created_at",
+    ]);
+    const row = database
+      .prepare(
+        "SELECT reference,name,email,phone,client_reference,note,status FROM requests WHERE reference=?",
+      )
+      .get(storedReference) as Record<string, unknown>;
+    expect(row).toEqual({
+      reference: storedReference,
+      name: "Taylor Requester",
+      email: "taylor@example.test",
+      phone: "+1 555 0199",
+      client_reference: "TAYLOR-PO-44",
+      note: "Please call before the visit.",
+      status: "new",
+    });
+    const item = database
+      .prepare(
+        "SELECT ri.quantity,p.name FROM request_items ri JOIN products p ON p.id=ri.product_id JOIN requests r ON r.id=ri.request_id WHERE r.reference=?",
+      )
+      .get(storedReference) as Record<string, unknown>;
+    expect(item).toEqual({
+      quantity: 2,
+      name: "Quarterly maintenance visit",
+    });
+  } finally {
+    database.close();
+  }
 });
 
-test("@claim:owner-exports owner exports CSV and PDF", async ({ request }) => {
+test("@claim:owner-exports owner exports CSV and PDF", async ({
+  page,
+  request,
+}) => {
   await ensureWorkspace(request);
   const client = await request.post("/api/admin/clients", {
     headers: ownerHeaders(),
@@ -563,7 +659,7 @@ test("@claim:owner-exports owner exports CSV and PDF", async ({ request }) => {
   });
   const csvText = await csv.text();
   expect(csvText).toContain(
-    "reference,name,email,status,created_at,items,note",
+    "reference,name,email,phone,client_reference,status,created_at,items,note",
   );
   expect(csvText).toContain(reference);
   expect(csvText).toContain("Export Person");
@@ -572,11 +668,32 @@ test("@claim:owner-exports owner exports CSV and PDF", async ({ request }) => {
   const pdf = await request.get("/api/admin/requests.pdf", {
     headers: ownerHeaders(),
   });
-  const pdfText = new TextDecoder().decode(await pdf.body());
-  expect(pdfText.slice(0, 8)).toBe("%PDF-1.4");
-  expect(pdfText).toContain(reference);
-  expect(pdfText).toContain("Export Person");
-  expect(pdfText).toContain("export-person@example.test");
+  const parsedRealPdf = await extractPdfText(await pdf.body());
+  expect(parsedRealPdf.pageCount).toBeGreaterThanOrEqual(1);
+  expect(parsedRealPdf.text).toContain(reference);
+  expect(parsedRealPdf.text).toContain("Export Person");
+  expect(parsedRealPdf.text).toContain("export-person@example.test");
+  expect(parsedRealPdf.text).toContain("Quarterly maintenance visit x 2");
+
+  await page.goto("/?demo=1");
+  const csvDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export CSV" }).click();
+  const csvDownload = await csvDownloadPromise;
+  const demoCsv = await readFile((await csvDownload.path())!, "utf8");
+  expect(demoCsv).toContain("CRC-240731");
+  expect(demoCsv).toContain("Avery Cole");
+  expect(demoCsv).toContain("Quarterly maintenance visit x 1");
+
+  const pdfDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export PDF" }).click();
+  const pdfDownload = await pdfDownloadPromise;
+  const parsedDemoPdf = await extractPdfText(
+    await readFile((await pdfDownload.path())!),
+  );
+  expect(parsedDemoPdf.pageCount).toBeGreaterThanOrEqual(1);
+  expect(parsedDemoPdf.text).toContain("CRC-240731");
+  expect(parsedDemoPdf.text).toContain("Avery Cole");
+  expect(parsedDemoPdf.text).toContain("Quarterly maintenance visit x 1");
 });
 
 test("@claim:client-offer-visibility each client link has its assigned offers", async ({
@@ -716,7 +833,11 @@ test("@claim:no-trackers and @claim:no-checkout use no third-party request", asy
   });
   const token = ((await made.json()) as { token: string }).token;
   const origins = new Set<string>();
-  page.on("request", (request) => origins.add(new URL(request.url()).origin));
+  const methods: string[] = [];
+  page.on("request", (request) => {
+    origins.add(new URL(request.url()).origin);
+    methods.push(request.method());
+  });
   await page.goto("/");
   await page.goto("/demo");
   await page.goto("/privacy");
@@ -735,11 +856,28 @@ test("@claim:no-trackers and @claim:no-checkout use no third-party request", asy
   await page
     .getByRole("button", { name: "View sample client catalog" })
     .click();
-  await page.locator(".add").first().click();
+  const offersBefore = await page.locator(".offer").allTextContents();
+  await page.locator('.offer[data-id="1"] .add').click();
+  await page.locator('.offer[data-id="2"] .add').click();
   await page.locator('input[name="name"]').fill("No Checkout");
   await page.locator('input[name="email"]').fill("no-checkout@example.test");
   await page.getByRole("button", { name: /send request/i }).click();
   await expect(page.locator("#form-message")).toContainText("Sample request");
+  await expect(
+    page.locator(
+      'a[href*="checkout"], a[href*="payment"], button:has-text("Pay"), button:has-text("Checkout"), [data-purchase], [data-reservation]',
+    ),
+  ).toHaveCount(0);
+  await page.waitForTimeout(1_000);
+  expect(await page.locator(".offer").allTextContents()).toEqual(offersBefore);
+  await page
+    .getByRole("button", { name: "Return to sample owner workspace" })
+    .click();
+  const sampleRequest = page.locator(".inbox-row").first();
+  await expect(sampleRequest).toContainText("Quarterly maintenance visit x 1");
+  await expect(sampleRequest).toContainText("Replacement fitting set x 1");
+  await expect(sampleRequest).not.toContainText(/purchase|reserved|charged/i);
+  expect(methods.every((method) => method === "GET")).toBe(true);
   expect([...origins]).toEqual(["http://127.0.0.1:8123"]);
 });
 
@@ -867,6 +1005,34 @@ test("browser Back and Forward restore focus and announce the restored route hea
   );
 });
 
+test("every visible internal link resolves and exports are buttons", async ({
+  page,
+  request,
+}) => {
+  let suffix = 150;
+  for (const route of ["/", "/?demo=1", "/owner", "/privacy", "/terms"]) {
+    await page.goto(route);
+    const links = await page.locator("a[href]").evaluateAll((anchors) =>
+      anchors.map((anchor) => (anchor as HTMLAnchorElement).href),
+    );
+    for (const href of links) {
+      const url = new URL(href);
+      if (url.origin !== "http://127.0.0.1:8123") continue;
+      const response = await request.get(url.pathname + url.search, {
+        headers: { "x-forwarded-for": `198.51.100.${suffix++}` },
+      });
+      expect(response.status(), `${route} links to ${url.pathname}`).toBe(200);
+    }
+  }
+  await page.goto("/?demo=1");
+  await expect(page.locator('a[href^="/api/admin/"]')).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Export CSV" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Export this request" }),
+  ).toHaveCount(3);
+});
+
 test("desktop/mobile keyboard, accessibility, offline, metadata and limits pass", async ({
   page,
   request,
@@ -952,6 +1118,11 @@ test("route metadata uses each real URL and private titles stay bounded", async 
   page,
   request,
 }) => {
+  const sitemap = await (await request.get("/sitemap.xml")).text();
+  for (const route of ["/", "/demo", "/owner", "/privacy", "/terms"])
+    expect(sitemap).toContain(
+      `<loc>https://client-request-catalog.sociobot.in${route}</loc>`,
+    );
   for (const route of [
     "/",
     "/demo",

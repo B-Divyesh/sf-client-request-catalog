@@ -1,1 +1,1 @@
-Create private price catalogs and collect clear client requests without checkout.
+Create private client catalogs that collect contact details, selected offers, and notes.

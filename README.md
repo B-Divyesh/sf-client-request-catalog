@@ -2,9 +2,9 @@
 
 Client Request Catalog helps small businesses share private prices and collect requests without checkout.
 
-Open `/?demo=1` for a one-click, owner-facing sample. It starts with three offers, two private client links, and three requests. Demo changes stay in browser memory and never enter the real inbox.
+Open `/?demo=1` to try a sample owner workspace. It starts with three offers, two private client links, and three requests. Demo changes stay in browser memory and never enter the real inbox.
 
-Open `/owner` to create the first owner workspace. Sociobot Microsoft Entra External ID is the only owner sign-in method. The owner can name the catalog, maintain offers, import a CSV price sheet, issue client links, and manage requests.
+Open `/owner` to create the first owner workspace. Sociobot Microsoft Entra External ID is the only owner sign-in method. Owners can name the catalog, maintain offers, import CSV price sheets, and issue client links. They can review, update, export, or delete requests.
 
 The product is free to use and requires an internet connection to load. One catalog can contain fixed prices and offers that need a quote.
 
@@ -38,8 +38,8 @@ Every visitor-facing claim is registered in `.factory/claims.json`. The browser 
 
 ## Privacy
 
-No product page loads analytics, advertising, remote fonts, or tracking scripts. Real requests store contact details and selected offers so the business can reply.
+No product page loads analytics, advertising, remote fonts, or tracking scripts. Real requests store the submitted name, email, phone, reference, note, and selected offers.
 
 Owners can export request rows as CSV or PDF. They can delete one request without exposing other clients. Deletion keeps only an internal request ID, action, and date.
 
-Sending a request never starts checkout or charges a client. The footer discloses the original image generation with Azure AI Foundry.
+Sending a request does not charge the client, reserve stock, or create a purchase. The footer discloses the original image generation with Azure AI Foundry.

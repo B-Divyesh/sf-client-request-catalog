@@ -28,6 +28,8 @@ type InboxRow = {
   reference: string;
   name: string;
   email: string;
+  phone?: string;
+  client_reference?: string;
   note?: string;
   status: string;
   created_at: string;
@@ -116,6 +118,8 @@ const freshDemoData = (): OwnerData => ({
       reference: "CRC-240731",
       name: "Avery Cole",
       email: "avery@example.test",
+      phone: "+1 555 0142",
+      client_reference: "NSW-184",
       note: "Tuesday mornings work best.",
       status: "new",
       created_at: "2026-09-01T09:20:00Z",
@@ -126,6 +130,8 @@ const freshDemoData = (): OwnerData => ({
       reference: "CRC-240730",
       name: "Morgan Lee",
       email: "morgan@example.test",
+      phone: "+1 555 0188",
+      client_reference: "FH-22",
       note: "Please match our last order.",
       status: "quoted",
       created_at: "2026-08-30T15:10:00Z",
@@ -285,11 +291,11 @@ function shell(
 
 function renderLanding() {
   shell(
-    `<section class="landing-hero"><div><p class="eyebrow">Client Request Catalog</p><h1>Create private catalogs for repeat clients</h1><p class="lede">Small businesses share prices, collect clear requests, and manage each offer without running a checkout.</p><div class="hero-actions"><div class="hero-action"><a class="stamp" href="/?demo=1">Try it with sample data</a><span>One click opens a filled owner workspace.</span></div><a class="button-outline" href="/owner">Set up your catalog</a></div><ul class="plain-facts"><li>Free to use.</li><li>Requires an internet connection.</li><li>No analytics or tracking.</li></ul></div><picture><source type="image/webp" srcset="/assets/request-desk-480.webp 480w, /assets/request-desk.webp 960w" sizes="(max-width: 700px) calc(100vw - 36px), 520px" /><img src="/assets/request-desk-480.webp" width="960" height="640" fetchpriority="high" decoding="async" alt="A blank request slip beside a ruler and spool in two-colour print." /></picture></section><section class="preview" aria-labelledby="preview-title"><div class="section-title"><div><p class="eyebrow">Client view</p><h2 id="preview-title">Show only the offers a client needs</h2></div><p>One catalog can show fixed prices and offers that need a quote.</p></div><div class="preview-lines" aria-label="Sample offer types"><p><strong>Maintenance visit</strong><span>Fixed price</span></p><p><strong>Replacement fitting set</strong><span>Price on application</span></p><p><strong>Repeat supplies</strong><span>Previous order</span></p></div></section><section class="how"><p class="eyebrow">How it works</p><h2>From private client link to clear request</h2><ol><li><strong>Set your business name.</strong><span>Create the owner workspace with Microsoft sign-in.</span></li><li><strong>Share the catalog.</strong><span>Only people with that private client link can view its prices.</span></li><li><strong>Reply from the inbox.</strong><span>Review selected offers, contact details, and notes together.</span></li></ol></section><section class="limits"><div><p class="eyebrow">Charges and availability</p><h2>This is not a checkout</h2></div><p>It does not charge clients, reserve stock, or promise availability. The business confirms every request directly.</p></section>`,
+    `<section class="landing-hero"><div><p class="eyebrow">Client Request Catalog</p><h1>Create private catalogs for repeat clients</h1><p class="lede">Small businesses share private prices and collect contact details, selected offers, and notes without checkout.</p><div class="hero-actions"><div class="hero-action"><a class="stamp" href="/?demo=1">Try it with sample data</a><span>One click opens a filled owner workspace.</span></div><a class="button-outline" href="/owner">Set up your catalog</a></div><ul class="plain-facts"><li>Free to use.</li><li>Requires an internet connection.</li><li>No analytics or tracking.</li></ul></div><picture><source type="image/webp" srcset="/assets/request-desk-480.webp 480w, /assets/request-desk.webp 960w" sizes="(max-width: 700px) calc(100vw - 36px), 520px" /><img src="/assets/request-desk-480.webp" width="960" height="640" fetchpriority="high" decoding="async" alt="A blank request slip beside a ruler and spool in two-colour print." /></picture></section><section class="preview" aria-labelledby="preview-title"><div class="section-title"><div><p class="eyebrow">Client view</p><h2 id="preview-title">Show only the offers a client needs</h2></div><p>One catalog can show fixed prices and offers that need a quote.</p></div><div class="preview-lines" aria-label="Sample offer types"><p><strong>Maintenance visit</strong><span>Fixed price</span></p><p><strong>Replacement fitting set</strong><span>Price on application</span></p><p><strong>Repeat supplies</strong><span>Previous order</span></p></div></section><section class="how"><p class="eyebrow">How it works</p><h2>From private client link to request inbox</h2><ol><li><strong>Set your business name.</strong><span>Create the owner workspace with Microsoft sign-in.</span></li><li><strong>Share the catalog.</strong><span>Only people with that private client link can view its prices.</span></li><li><strong>Review requests in the inbox.</strong><span>Contact the client by email outside this app.</span></li></ol></section><section class="limits"><div><p class="eyebrow">Charges and availability</p><h2>This is not a checkout</h2></div><p>It does not charge clients, reserve stock, or create a purchase. The business contacts each client outside this app.</p></section>`,
     {
       title: "Client Request Catalog — share private prices",
       description:
-        "Create private client catalogs, collect clear quote requests, and manage them in one owner inbox.",
+        "Create private client catalogs and collect contact details, selected offers, and notes in one owner inbox.",
       canonical: "/",
     },
   );
@@ -394,6 +400,8 @@ async function submitRequest(event: SubmitEvent) {
         reference,
         name: String(body.name),
         email: String(body.email),
+        phone: String(body.phone || "") || undefined,
+        client_reference: String(body.reference || "") || undefined,
         note: String(body.note || ""),
         status: "new",
         created_at: new Date().toISOString(),
@@ -609,12 +617,14 @@ function csvText(rows: InboxRow[]) {
   const quote = (value: unknown) =>
     `"${String(value ?? "").replaceAll('"', '""')}"`;
   return [
-    "reference,name,email,status,created_at,items,note",
+    "reference,name,email,phone,client_reference,status,created_at,items,note",
     ...rows.map((row) =>
       [
         row.reference,
         row.name,
         row.email,
+        row.phone,
+        row.client_reference,
         row.status,
         row.created_at,
         row.items,
@@ -633,6 +643,52 @@ function downloadBlob(content: string, type: string, filename: string) {
   link.download = filename;
   link.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function simplePdf(lines: string[]) {
+  let stream = "BT\n/F1 11 Tf\n50 760 Td\n";
+  for (const line of lines.slice(0, 42)) {
+    const safe = line
+      .replaceAll("\\", "\\\\")
+      .replaceAll("(", "\\(")
+      .replaceAll(")", "\\)")
+      .replace(/[^\x20-\x7e]/g, "?");
+    stream += `(${safe}) Tj\n0 -16 Td\n`;
+  }
+  stream += "ET\n";
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Length ${stream.length} >>\nstream\n${stream}endstream`,
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets: number[] = [];
+  objects.forEach((object, index) => {
+    offsets.push(pdf.length);
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (const offset of offsets)
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return pdf;
+}
+
+function requestPdf(rows: InboxRow[], businessName: string) {
+  const lines = [`${businessName} - request inbox`, "Sample export", ""];
+  for (const row of rows) {
+    lines.push(`${row.reference} - ${row.status} - ${row.name} - ${row.email}`);
+    if (row.phone) lines.push(`  Phone: ${row.phone}`);
+    if (row.client_reference)
+      lines.push(`  Client reference: ${row.client_reference}`);
+    lines.push(`  ${row.items}`);
+    if (row.note) lines.push(`  Note: ${row.note}`);
+    lines.push("");
+  }
+  return simplePdf(lines);
 }
 
 function splitCsvLine(line: string) {
@@ -711,7 +767,7 @@ function renderOwner(data: OwnerData, isDemo = false) {
     ? data.requests
         .map(
           (request) =>
-            `<li class="inbox-row"><div><strong>${esc(request.reference)}</strong><span class="status ${esc(request.status)}">${esc(request.status)}</span><p>${esc(request.name)} · ${esc(request.email)}${request.note ? `<br>${esc(request.note)}` : ""}</p><small>${esc(request.items)}</small></div><div class="request-actions"><time datetime="${esc(request.created_at)}">${new Date(request.created_at).toLocaleDateString()}</time><label class="visually-hidden" for="status-${request.id}">Status for ${esc(request.reference)}</label><select id="status-${request.id}" data-status="${request.id}"><option ${request.status === "new" ? "selected" : ""}>new</option><option ${request.status === "quoted" ? "selected" : ""}>quoted</option><option ${request.status === "closed" ? "selected" : ""}>closed</option></select><a class="button-outline export-request" data-request="${request.id}" href="/api/admin/requests/${request.id}.csv">Export this request</a><button class="danger delete-request" data-request="${request.id}" data-reference="${esc(request.reference)}" type="button">Delete this request</button></div></li>`,
+            `<li class="inbox-row"><div><strong>${esc(request.reference)}</strong><span class="status ${esc(request.status)}">${esc(request.status)}</span><p>${esc(request.name)} · ${esc(request.email)}${request.phone ? ` · ${esc(request.phone)}` : ""}${request.client_reference ? `<br>Client reference: ${esc(request.client_reference)}` : ""}${request.note ? `<br>${esc(request.note)}` : ""}</p><small>${esc(request.items)}</small></div><div class="request-actions"><time datetime="${esc(request.created_at)}">${new Date(request.created_at).toLocaleDateString()}</time><label class="visually-hidden" for="status-${request.id}">Status for ${esc(request.reference)}</label><select id="status-${request.id}" data-status="${request.id}"><option ${request.status === "new" ? "selected" : ""}>new</option><option ${request.status === "quoted" ? "selected" : ""}>quoted</option><option ${request.status === "closed" ? "selected" : ""}>closed</option></select><button class="button-outline export-request" data-request="${request.id}" type="button">Export this request</button><button class="danger delete-request" data-request="${request.id}" data-reference="${esc(request.reference)}" type="button">Delete this request</button></div></li>`,
         )
         .join("")
     : '<li class="empty"><h3>Your inbox is clear</h3><p>Create and share a private client link to receive requests.</p></li>';
@@ -739,7 +795,7 @@ function renderOwner(data: OwnerData, isDemo = false) {
     ? '<button id="view-client" class="button-outline" type="button">View sample client catalog</button>'
     : '<button id="logout" type="button">Lock workspace</button>';
   shell(
-    `<section class="owner-head"><div><p class="eyebrow">${isDemo ? "Sample owner workspace" : "Owner workspace"}</p><h1>${esc(data.business_name)}<br><em>request desk</em></h1></div><div class="owner-actions"><a class="button-outline" href="/api/admin/requests.csv" id="csv">Export CSV</a><a class="button-outline" href="/api/admin/requests.pdf" id="pdf">Export PDF</a>${modeActions}</div></section><section class="business-settings" aria-labelledby="business-settings-title"><div><p class="eyebrow">Catalog identity</p><h2 id="business-settings-title">Business name clients see</h2><p>Update this name before sharing a private client link.</p></div><form id="business-form"><label>Business name<input name="business_name" value="${esc(data.business_name)}" maxlength="120" required aria-describedby="business-message" /></label><p id="business-message" class="form-message" role="status" aria-live="polite"></p><button type="submit">Save business name</button></form></section><section class="metrics"><div><strong>${data.requests.filter((request) => request.status === "new").length}</strong><span>New requests</span></div><div><strong>${visibleProducts.length}</strong><span>Available offers</span></div><div><strong>${data.clients.filter((client) => new Date(client.expires_at).getTime() > Date.now()).length}</strong><span>Active client links</span></div></section><section class="offer-manager" aria-labelledby="offers-title"><div class="section-title"><div><p class="eyebrow">Price sheet</p><h2 id="offers-title">Manage offers</h2></div><p>Edit, archive, delete, or import offers.</p></div><ul class="managed-offers">${offers}</ul><div class="offer-tools"><section class="product-editor"><h3>Add one offer</h3><form id="product-form"><label>Name<input name="name" required /></label><label>Description<textarea name="description" required rows="2"></textarea></label><div class="form-grid"><label>Price in cents <span>(blank = needs a quote)</span><input name="price_cents" type="number" min="0" /></label><label>Availability note<input name="stock_note" /></label></div><p class="form-message" id="product-message" role="status" aria-live="polite"></p><button type="submit">Add offer</button></form></section><section class="import-panel"><h3>Import offers from CSV</h3><p>Preview rows before import. Duplicate names are skipped.</p><button id="download-template" class="button-outline" type="button">Download CSV template</button><label>Choose CSV file<input id="offer-csv" type="file" accept=".csv,text/csv" /></label><div id="import-preview" class="import-preview" aria-live="polite"></div><button id="import-offers" type="button" disabled>Import valid offers</button>${lastImportedIds.length ? '<button id="undo-import" class="button-outline" type="button">Undo last import</button>' : ""}</section></div></section><section class="client-manager" aria-labelledby="client-links-title"><div class="section-title"><div><p class="eyebrow">Private access</p><h2 id="client-links-title">Client links and visible offers</h2></div><p>Choose exactly which offers each private client link can open.</p></div><form id="client-form"><div class="form-grid"><label>Client name<input name="name" required maxlength="120" /></label><label>Expires after<input name="expires_in_days" type="number" min="1" max="365" value="90" required /></label></div>${offerChoices(
+    `<section class="owner-head"><div><p class="eyebrow">${isDemo ? "Sample owner workspace" : "Owner workspace"}</p><h1>${esc(data.business_name)}<br><em>request desk</em></h1></div><div class="owner-actions"><button class="button-outline" type="button" id="csv">Export CSV</button><button class="button-outline" type="button" id="pdf">Export PDF</button>${modeActions}</div></section><section class="business-settings" aria-labelledby="business-settings-title"><div><p class="eyebrow">Catalog identity</p><h2 id="business-settings-title">Business name clients see</h2><p>Update this name before sharing a private client link.</p></div><form id="business-form"><label>Business name<input name="business_name" value="${esc(data.business_name)}" maxlength="120" required aria-describedby="business-message" /></label><p id="business-message" class="form-message" role="status" aria-live="polite"></p><button type="submit">Save business name</button></form></section><section class="metrics"><div><strong>${data.requests.filter((request) => request.status === "new").length}</strong><span>New requests</span></div><div><strong>${visibleProducts.length}</strong><span>Available offers</span></div><div><strong>${data.clients.filter((client) => new Date(client.expires_at).getTime() > Date.now()).length}</strong><span>Active client links</span></div></section><section class="offer-manager" aria-labelledby="offers-title"><div class="section-title"><div><p class="eyebrow">Price sheet</p><h2 id="offers-title">Manage offers</h2></div><p>Edit, archive, delete, or import offers.</p></div><ul class="managed-offers">${offers}</ul><div class="offer-tools"><section class="product-editor"><h3>Add one offer</h3><form id="product-form"><label>Name<input name="name" required /></label><label>Description<textarea name="description" required rows="2"></textarea></label><div class="form-grid"><label>Price in cents <span>(blank = needs a quote)</span><input name="price_cents" type="number" min="0" /></label><label>Availability note<input name="stock_note" /></label></div><p class="form-message" id="product-message" role="status" aria-live="polite"></p><button type="submit">Add offer</button></form></section><section class="import-panel"><h3>Import offers from CSV</h3><p>Preview rows before import. Duplicate names are skipped.</p><button id="download-template" class="button-outline" type="button">Download CSV template</button><label>Choose CSV file<input id="offer-csv" type="file" accept=".csv,text/csv" /></label><div id="import-preview" class="import-preview" aria-live="polite"></div><button id="import-offers" type="button" disabled>Import valid offers</button>${lastImportedIds.length ? '<button id="undo-import" class="button-outline" type="button">Undo last import</button>' : ""}</section></div></section><section class="client-manager" aria-labelledby="client-links-title"><div class="section-title"><div><p class="eyebrow">Private access</p><h2 id="client-links-title">Client links and visible offers</h2></div><p>Choose exactly which offers each private client link can open.</p></div><form id="client-form"><div class="form-grid"><label>Client name<input name="name" required maxlength="120" /></label><label>Expires after<input name="expires_in_days" type="number" min="1" max="365" value="90" required /></label></div>${offerChoices(
       visibleProducts.map((product) => product.id),
       "Offers for this new client link",
     )}<p class="form-message" id="client-message" role="status" aria-live="polite"></p><button type="submit">Create private client link</button></form><ul class="client-list">${clients}</ul></section><section class="owner-grid"><section><div class="section-title"><h2>Request inbox</h2><span>Export or delete one request</span></div><ul class="inbox">${requests}</ul></section><section class="product-editor"><h2>Privacy controls</h2><p>Delete one request above. Deletion keeps only an internal request ID, action, and date.</p><p>${data.deletion_audit_count} deletion audit record${data.deletion_audit_count === 1 ? "" : "s"} contain no contact details.</p><button class="danger" id="delete-data" type="button">Delete all request data</button></section></section>`,
@@ -765,13 +821,12 @@ function renderOwner(data: OwnerData, isDemo = false) {
     ["csv", "/api/admin/requests.csv", "client-requests.csv"],
     ["pdf", "/api/admin/requests.pdf", "client-requests.pdf"],
   ] as const) {
-    $<HTMLAnchorElement>(`#${id}`).addEventListener("click", async (event) => {
-      event.preventDefault();
+    $<HTMLButtonElement>(`#${id}`).addEventListener("click", async () => {
       if (isDemo)
         downloadBlob(
           id === "csv"
             ? csvText(data.requests)
-            : `%PDF-1.4\n${data.requests.map((row) => `${row.reference} ${row.name} ${row.email} ${row.items}`).join("\n")}\n%%EOF`,
+            : requestPdf(data.requests, data.business_name),
           id === "csv" ? "text/csv" : "application/pdf",
           name,
         );
@@ -1110,17 +1165,16 @@ function renderOwner(data: OwnerData, isDemo = false) {
     refresh();
   });
   document
-    .querySelectorAll<HTMLAnchorElement>(".export-request")
-    .forEach((link) =>
-      link.addEventListener("click", async (event) => {
-        event.preventDefault();
-        const id = Number(link.dataset.request);
+    .querySelectorAll<HTMLButtonElement>(".export-request")
+    .forEach((button) =>
+      button.addEventListener("click", async () => {
+        const id = Number(button.dataset.request);
         if (isDemo) {
           const row = data.requests.filter((item) => item.id === id);
           downloadBlob(csvText(row), "text/csv", "request-export.csv");
           return;
         }
-        const response = await api(link.href);
+        const response = await api(`/api/admin/requests/${id}.csv`);
         if (response.ok) download(response, "request-export.csv");
         else
           window.alert("The request export could not be created. Try again.");
@@ -1197,8 +1251,8 @@ function renderDemoClient() {
 function legal(kind: "privacy" | "terms") {
   const privacy = kind === "privacy";
   const body = privacy
-    ? "<h2>Information stored</h2><p>A submitted request stores your name, email, selected offers, and optional contact details. The business uses that information to reply with a quote.</p><h2>Tracking and outside services</h2><p>No page loads analytics, advertising, remote fonts, or tracking scripts. The demo keeps sample changes only in browser memory.</p><p>Owner sign-in uses the Sociobot Microsoft Entra External ID tenant. Microsoft handles the owner account and sign-in session.</p><h2>Export and deletion</h2><p>Ask the business that shared the private client link to export or delete your request. The owner can export that request alone or delete it without exposing other clients. Deletion keeps only an internal request ID, action, and date.</p>"
-    : "<h2>This is not a purchase</h2><p>Sending a request does not create a purchase, reserve stock, or guarantee a price. The business confirms availability and terms directly.</p><h2>Private client links</h2><p>A private client link grants access to its catalog. Do not forward it. The business can revoke it or let it expire.</p><h2>Acceptable use</h2><p>Send genuine requests through a link shared with you. If a link expires, ask the business for another.</p>";
+    ? "<h2>Information stored</h2><p>A submitted request stores your name, email, phone, reference, note, and selected offers. The business contacts you outside this app.</p><h2>Tracking and outside services</h2><p>No page loads analytics, advertising, remote fonts, or tracking scripts. The demo keeps sample changes only in browser memory.</p><p>Owner sign-in uses the Sociobot Microsoft Entra External ID tenant. Microsoft handles the owner account and sign-in session.</p><h2>Export and deletion</h2><p>Ask the business that shared the private client link to export or delete your request. The owner can export that request alone or delete it without exposing other clients. Deletion keeps only an internal request ID, action, and date.</p>"
+    : "<h2>This is not a purchase</h2><p>Sending a request does not charge you, create a purchase, or reserve stock. The business contacts you outside this app.</p><h2>Private client links</h2><p>A private client link grants access to its catalog. Do not forward it. The business can revoke it or let it expire.</p><h2>Acceptable use</h2><p>Send genuine requests through a link shared with you. If a link expires, ask the business for another.</p>";
   shell(
     `<article class="legal"><p class="eyebrow">${privacy ? "Privacy" : "Terms"}</p><h1>${privacy ? "How your request data is handled" : "Terms for sending a request"}</h1>${body}<p><a href="/">Return home</a></p></article>`,
     {

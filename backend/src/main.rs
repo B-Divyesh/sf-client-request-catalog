@@ -217,6 +217,8 @@ struct InboxRow {
     reference: String,
     name: String,
     email: String,
+    phone: Option<String>,
+    client_reference: Option<String>,
     note: Option<String>,
     status: String,
     created_at: String,
@@ -1487,13 +1489,13 @@ async fn request_rows(
 ) -> Result<Vec<InboxRow>, sqlx::Error> {
     match request_id {
         Some(id) => sqlx::query_as::<_, InboxRow>(
-            "SELECT r.id,r.reference,r.name,r.email,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' x ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id WHERE r.id=? GROUP BY r.id ORDER BY r.id DESC",
+            "SELECT r.id,r.reference,r.name,r.email,r.phone,r.client_reference,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' x ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id WHERE r.id=? GROUP BY r.id ORDER BY r.id DESC",
         )
         .bind(id)
         .fetch_all(db)
         .await,
         None => sqlx::query_as::<_, InboxRow>(
-            "SELECT r.id,r.reference,r.name,r.email,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' x ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id GROUP BY r.id ORDER BY r.id DESC",
+            "SELECT r.id,r.reference,r.name,r.email,r.phone,r.client_reference,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' x ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id GROUP BY r.id ORDER BY r.id DESC",
         )
         .fetch_all(db)
         .await,
@@ -1836,7 +1838,8 @@ async fn export_csv(State(state): State<AppState>, headers: HeaderMap) -> Respon
     csv_response(rows, "client-requests.csv")
 }
 fn csv_response(rows: Vec<InboxRow>, filename: &str) -> Response {
-    let mut csv = "reference,name,email,status,created_at,items,note\n".to_string();
+    let mut csv =
+        "reference,name,email,phone,client_reference,status,created_at,items,note\n".to_string();
     for r in rows {
         csv.push_str(&format!(
             "{}\n",
@@ -1844,6 +1847,8 @@ fn csv_response(rows: Vec<InboxRow>, filename: &str) -> Response {
                 r.reference,
                 r.name,
                 r.email,
+                r.phone.unwrap_or_default(),
+                r.client_reference.unwrap_or_default(),
                 r.status,
                 r.created_at,
                 r.items,
@@ -1871,7 +1876,15 @@ async fn export_pdf(State(state): State<AppState>, headers: HeaderMap) -> Respon
     if let Err(response) = authorize_owner(&state, &headers).await {
         return response.into_response();
     }
-    let rows = sqlx::query_as::<_, InboxRow>("SELECT r.id,r.reference,r.name,r.email,r.note,r.status,r.created_at,COALESCE(group_concat(p.name || ' x ' || ri.quantity, '; '),'') items FROM requests r LEFT JOIN request_items ri ON ri.request_id=r.id LEFT JOIN products p ON p.id=ri.product_id GROUP BY r.id ORDER BY r.id DESC").fetch_all(&state.db).await.unwrap_or_default();
+    let rows = match request_rows(&state.db, None).await {
+        Ok(rows) => rows,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not create the inbox PDF.",
+            )
+        }
+    };
     let mut lines = vec![
         format!("{} — request inbox", business_name(&state)),
         format!("Exported {}", Utc::now().format("%Y-%m-%d")),
@@ -1882,6 +1895,12 @@ async fn export_pdf(State(state): State<AppState>, headers: HeaderMap) -> Respon
             "{} · {} · {} · {}",
             r.reference, r.status, r.name, r.email
         ));
+        if let Some(phone) = r.phone {
+            lines.push(format!("  Phone: {}", phone));
+        }
+        if let Some(client_reference) = r.client_reference {
+            lines.push(format!("  Client reference: {}", client_reference));
+        }
         lines.push(format!("  {}", r.items));
         if let Some(note) = r.note {
             lines.push(format!("  Note: {}", note));
