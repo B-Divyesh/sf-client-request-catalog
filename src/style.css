@@ -168,7 +168,7 @@ h3 { font-size: 1.2rem; }
 .plain-facts { padding: 0; margin: 28px 0 0; list-style: none; font: 700 13px ui-monospace, SFMono-Regular, monospace; }
 .plain-facts li { padding: 8px 0; border-top: 1px solid var(--line); }
 
-.preview, .how, .limits, .client-manager { padding: 56px 0; }
+.preview, .how, .limits, .client-manager, .offer-manager { padding: 56px 0; }
 .catalog-head, .section-title {
   display: flex;
   align-items: end;
@@ -262,6 +262,18 @@ code { display: block; font: 13px ui-monospace, SFMono-Regular, monospace; overf
 .status.closed { color: var(--muted); }
 .product-editor { background: var(--surface); padding: 24px; align-self: start; }
 .product-editor hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
+.managed-offers { list-style: none; margin: 20px 0 28px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.managed-offer { background: var(--surface); border: 1px solid var(--line); padding: 20px; }
+.managed-offer.archived { border-style: dashed; opacity: .78; }
+.managed-offer label { margin-top: 10px; }
+.offer-state { color: var(--muted); font-size: 13px; font-family: ui-monospace, SFMono-Regular, monospace; }
+.offer-controls { display: flex; flex-wrap: wrap; gap: 10px; }
+.offer-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.import-panel { border: 1px solid var(--line); padding: 24px; }
+.import-preview { min-height: 48px; margin-block: 14px; }
+.import-preview ul { padding-left: 22px; }
+.import-error { color: var(--danger); }
+.demo-view-switch { padding-top: 24px; }
 .danger { background: transparent; color: var(--danger); border-color: var(--danger); }
 .legal h1 { font-size: clamp(2.5rem, 5vw, 4.5rem); }
 .legal h2 { margin-top: 38px; }
@@ -283,7 +295,7 @@ code { display: block; font: 13px ui-monospace, SFMono-Regular, monospace; overf
   .how li { grid-template-columns: 36px 1fr; }
   .how li span { grid-column: 2; }
   .request-slip { padding: 24px 18px; box-shadow: 7px 7px 0 var(--clay); margin: 48px 0; }
-  .form-grid, .owner-grid, .business-settings { grid-template-columns: 1fr; }
+  .form-grid, .owner-grid, .business-settings, .managed-offers, .offer-tools { grid-template-columns: 1fr; }
   .metrics { grid-template-columns: 1fr 1fr; }
   .metrics div:last-child { grid-column: span 2; border-top: 1px solid var(--line); }
   footer { flex-direction: column; }

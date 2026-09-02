@@ -1,7 +1,9 @@
 # Demo sandbox
 
-Open /demo or select **Try it with sample data** on the landing page.
+Open `/?demo=1` or `/demo`. The landing page reaches the same demo with one click.
 
-The demo contains three fictional workshop offers. Its request endpoint validates the form and returns a sample receipt. It does not read or write SQLite. No demo contact details enter the owner inbox.
+The first screen is a filled owner workspace for North Street Workshop. It contains three offers, two private client links, and three requests in different states. Owners can change the business name, maintain offers, import a CSV, change request states, export, delete, and change link assignments.
 
-**Reset demo** clears the current selection and reloads the original sample. **Start for real** opens /owner, where the first business signs in through Sociobot Microsoft Entra External ID and sets its name. The demo does not use localStorage, IndexedDB, or a production client token.
+Select **View sample client catalog** to open Avery's assigned offers. A sample request appears in the sample owner inbox when submitted.
+
+Every change stays in JavaScript memory. The demo never reads or writes SQLite, localStorage, sessionStorage, IndexedDB, or a production client token. Reloading or selecting **Reset demo** restores the original sample. **Set up your catalog** opens `/owner` for Microsoft sign-in.

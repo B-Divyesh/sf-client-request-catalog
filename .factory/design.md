@@ -6,7 +6,7 @@
 price sheets, bench notes, and repeat customers—not shiny consumer shops. The
 interface borrows the deliberate imperfection of a two-colour trade catalogue:
 coarse halftone dots, overprinted rules, stamped status chips, and generous
-paper margins. It makes a quote-first request feel considered and private,
+paper margins. It makes a request that needs a quote feel considered and private,
 rather than like an abandoned checkout.
 
 ## Tokens
@@ -48,7 +48,7 @@ decorative; it is absent from the accessibility tree.
 
 The public landing page uses the same trade-print grammar without exposing a
 catalog or prices. The isolated demo adds a bordered ledger notice above the
-catalog, with Reset demo and Start for real kept in that persistent strip.
+owner workspace. Reset demo and Set up your catalog stay in that strip.
 
 ## Original illustration plan and provenance
 

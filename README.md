@@ -1,8 +1,12 @@
 # Client Request Catalog
 
-Client Request Catalog is for small service and goods businesses that share private prices with repeat clients. An owner creates a branded catalog, chooses the offers on each opaque client link, and receives quote requests in one inbox.
+Client Request Catalog helps small businesses share private prices and collect requests without checkout.
 
-Open /demo for a one-click isolated sample. Open /owner to create the first owner workspace. The first business signs in through the shared Sociobot Microsoft Entra External ID tenant, then chooses its catalog name. The server keys ownership by Entra's stable object ID. It stores no owner password.
+Open `/?demo=1` for a one-click, owner-facing sample. It starts with three offers, two private client links, and three requests. Demo changes stay in browser memory and never enter the real inbox.
+
+Open `/owner` to create the first owner workspace. Sociobot Microsoft Entra External ID is the only owner sign-in method. The owner can name the catalog, maintain offers, import a CSV price sheet, issue client links, and manage requests.
+
+The product is free to use and requires an internet connection to load. One catalog can contain fixed prices and offers that need a quote.
 
 ## Run
 
@@ -10,7 +14,9 @@ Open /demo for a one-click isolated sample. Open /owner to create the first owne
     npm run build
     cargo run --manifest-path backend/Cargo.toml
 
-The service runs on PORT (default 8080) with no required environment variables. It writes SQLite state to /data/catalog-live.sqlite by default, or DATA_DIR when set. Persist /data in deployment. Entra tenant and public client settings have safe Sociobot defaults and optional `ENTRA_TENANT_ID`, `ENTRA_TENANT_SUBDOMAIN`, and `ENTRA_CLIENT_ID` overrides.
+`PORT` defaults to `8080`. Set `DATA_DIR` when local data should live somewhere other than `/data`. Mount `/data` on durable storage when deploying.
+
+The default sign-in configuration points to Sociobot’s Entra tenant. Operators may set `ENTRA_TENANT_ID`, `ENTRA_TENANT_SUBDOMAIN`, and `ENTRA_CLIENT_ID` for another tenant.
 
 ## Deploy
 
@@ -19,21 +25,21 @@ Build the root Dockerfile and mount durable storage at `/data`:
     docker build --build-arg BUILD_SHA=$(git rev-parse HEAD) -t client-request-catalog .
     docker run --rm -p 8080:8080 -v client-request-catalog-data:/data client-request-catalog
 
-The factory deployment uses the same container on port 8080 with one replica and its product-owned `/data` share.
-
 ## Verify
 
     npm test
     npm run check
     npm run build
     cargo fmt --manifest-path backend/Cargo.toml -- --check
-    cargo test --manifest-path backend/Cargo.toml
+    cargo test --locked --manifest-path backend/Cargo.toml
     npm run test:e2e
 
-Every visitor-facing statement is registered in .factory/claims.json. The browser suite covers Entra-only ownership and branding, the demo sandbox, request privacy, individual export/deletion and minimal audit fields, opaque links, exports, generated-art disclosure, accessibility, mobile, keyboard, image delivery, offline failure handling, metadata, headers, and rate limits.
+Every visitor-facing claim is registered in `.factory/claims.json`. The browser suite covers every registered claim. It also checks accessibility, routing, metadata, image delivery, offline behavior, and rate limits.
 
 ## Privacy
 
-The demo is non-persistent. Real requests store submitted contact details and selected offers so the business can reply. Owners can export or delete one request. Deletion retains only an internal request ID, action, and date.
+No product page loads analytics, advertising, remote fonts, or tracking scripts. Real requests store contact details and selected offers so the business can reply.
 
-The request flow never starts checkout or charges a client. The footer discloses that its original request-slip illustration was generated with Azure AI Foundry.
+Owners can export request rows as CSV or PDF. They can delete one request without exposing other clients. Deletion keeps only an internal request ID, action, and date.
+
+Sending a request never starts checkout or charges a client. The footer discloses the original image generation with Azure AI Foundry.

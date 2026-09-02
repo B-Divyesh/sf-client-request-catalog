@@ -196,6 +196,18 @@ struct ProductInput {
     stock_note: Option<String>,
 }
 #[derive(Deserialize)]
+struct ProductUpdate {
+    name: Option<String>,
+    description: Option<String>,
+    price_cents: Option<String>,
+    stock_note: Option<String>,
+    visible: Option<bool>,
+}
+#[derive(Deserialize)]
+struct ProductImportInput {
+    products: Vec<ProductInput>,
+}
+#[derive(Deserialize)]
 struct StatusInput {
     status: String,
 }
@@ -452,6 +464,11 @@ fn app(mut state: AppState, dist_dir: PathBuf) -> Router {
             delete(revoke_client).patch(set_client_offers),
         )
         .route("/api/admin/products", post(create_product))
+        .route("/api/admin/products/import", post(import_products))
+        .route(
+            "/api/admin/products/:id",
+            axum::routing::patch(update_product).delete(delete_product),
+        )
         .route("/api/admin/requests", delete(delete_requests))
         .route(
             "/api/admin/requests/:id",
@@ -924,18 +941,32 @@ fn business_name(state: &AppState) -> String {
         .clone()
         .unwrap_or_else(|| "Your catalog".into())
 }
-async fn get_catalog(State(state): State<AppState>, Path(token): Path<String>) -> Response {
+async fn get_catalog(
+    State(state): State<AppState>,
+    Path(token): Path<String>,
+    headers: HeaderMap,
+) -> Response {
     if token == "demo-client" {
         return error(
             StatusCode::GONE,
             "This client link has expired or is not valid.",
         );
     }
+    let now = if state.auth.test_identity.is_some() {
+        headers
+            .get("x-test-now")
+            .and_then(|value| value.to_str().ok())
+            .filter(|value| chrono::DateTime::parse_from_rfc3339(value).is_ok())
+            .map(ToOwned::to_owned)
+            .unwrap_or_else(|| Utc::now().to_rfc3339())
+    } else {
+        Utc::now().to_rfc3339()
+    };
     let client = sqlx::query_as::<_, (i64, String, String)>(
         "SELECT id,name,expires_at FROM clients WHERE token=? AND expires_at > ?",
     )
     .bind(token)
-    .bind(Utc::now().to_rfc3339())
+    .bind(now)
     .fetch_optional(&state.db)
     .await;
     match client {
@@ -1535,6 +1566,206 @@ async fn create_product(
             "Could not save that offer.",
         ),
     }
+}
+fn parsed_price(value: Option<String>) -> Result<Option<i64>, &'static str> {
+    match value.filter(|price| !price.trim().is_empty()) {
+        Some(price) => price
+            .parse::<i64>()
+            .ok()
+            .filter(|number| (0..=100_000_000).contains(number))
+            .map(Some)
+            .ok_or("Price must be a whole number of cents."),
+        None => Ok(None),
+    }
+}
+
+async fn update_product(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<i64>,
+    Json(input): Json<ProductUpdate>,
+) -> Response {
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
+    }
+    let existing = sqlx::query_as::<_, Product>(
+        "SELECT id,name,description,price_cents,currency,stock_note,visible FROM products WHERE id=?",
+    )
+    .bind(id)
+    .fetch_optional(&state.db)
+    .await;
+    let Ok(Some(existing)) = existing else {
+        return error(StatusCode::NOT_FOUND, "Offer not found.");
+    };
+    let name = input.name.unwrap_or(existing.name).trim().to_owned();
+    let description = input
+        .description
+        .unwrap_or(existing.description)
+        .trim()
+        .to_owned();
+    if name.is_empty() || name.len() > 120 || description.is_empty() || description.len() > 1000 {
+        return error(StatusCode::BAD_REQUEST, "Add a short name and description.");
+    }
+    let price = match input.price_cents {
+        Some(value) => match parsed_price(Some(value)) {
+            Ok(price) => price,
+            Err(message) => return error(StatusCode::BAD_REQUEST, message),
+        },
+        None => existing.price_cents,
+    };
+    let stock_note = input.stock_note.unwrap_or(existing.stock_note);
+    let visible = input.visible.unwrap_or(existing.visible);
+    match sqlx::query(
+        "UPDATE products SET name=?,description=?,price_cents=?,stock_note=?,visible=? WHERE id=?",
+    )
+    .bind(name)
+    .bind(description)
+    .bind(price)
+    .bind(stock_note)
+    .bind(visible)
+    .bind(id)
+    .execute(&state.db)
+    .await
+    {
+        Ok(result) if result.rows_affected() == 1 => {
+            Json(serde_json::json!({"ok":true})).into_response()
+        }
+        Ok(_) => error(StatusCode::NOT_FOUND, "Offer not found."),
+        Err(_) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not update that offer.",
+        ),
+    }
+}
+
+async fn delete_product(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<i64>,
+) -> Response {
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
+    }
+    let used: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM request_items WHERE product_id=?")
+        .bind(id)
+        .fetch_one(&state.db)
+        .await
+        .unwrap_or(0);
+    if used > 0 {
+        return error(
+            StatusCode::CONFLICT,
+            "This offer appears in a request. Archive it instead.",
+        );
+    }
+    let mut tx = match state.db.begin().await {
+        Ok(tx) => tx,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not delete that offer.",
+            )
+        }
+    };
+    if sqlx::query("DELETE FROM client_products WHERE product_id=?")
+        .bind(id)
+        .execute(&mut *tx)
+        .await
+        .is_err()
+    {
+        return error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not delete that offer.",
+        );
+    }
+    let deleted = sqlx::query("DELETE FROM products WHERE id=?")
+        .bind(id)
+        .execute(&mut *tx)
+        .await;
+    match deleted {
+        Ok(result) if result.rows_affected() == 1 && tx.commit().await.is_ok() => {
+            Json(serde_json::json!({"ok":true})).into_response()
+        }
+        Ok(_) => error(StatusCode::NOT_FOUND, "Offer not found."),
+        Err(_) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not delete that offer.",
+        ),
+    }
+}
+
+async fn import_products(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(input): Json<ProductImportInput>,
+) -> Response {
+    if let Err(response) = authorize_owner(&state, &headers).await {
+        return response.into_response();
+    }
+    if input.products.is_empty() || input.products.len() > 250 {
+        return error(StatusCode::BAD_REQUEST, "Import between 1 and 250 offers.");
+    }
+    let mut tx = match state.db.begin().await {
+        Ok(tx) => tx,
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not import offers.",
+            )
+        }
+    };
+    let mut ids = Vec::new();
+    let mut skipped = Vec::new();
+    for product in input.products {
+        let name = product.name.trim();
+        let description = product.description.trim();
+        if name.is_empty() || name.len() > 120 || description.is_empty() || description.len() > 1000
+        {
+            return error(
+                StatusCode::BAD_REQUEST,
+                "Each imported offer needs a short name and description.",
+            );
+        }
+        let duplicate: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM products WHERE lower(trim(name))=lower(trim(?))",
+        )
+        .bind(name)
+        .fetch_one(&mut *tx)
+        .await
+        .unwrap_or(1);
+        if duplicate > 0 {
+            skipped.push(name.to_owned());
+            continue;
+        }
+        let price = match parsed_price(product.price_cents) {
+            Ok(price) => price,
+            Err(message) => return error(StatusCode::BAD_REQUEST, message),
+        };
+        let inserted = sqlx::query(
+            "INSERT INTO products (name,description,price_cents,stock_note) VALUES (?,?,?,?)",
+        )
+        .bind(name)
+        .bind(description)
+        .bind(price)
+        .bind(product.stock_note.unwrap_or_default())
+        .execute(&mut *tx)
+        .await;
+        match inserted {
+            Ok(result) => ids.push(result.last_insert_rowid()),
+            Err(_) => {
+                return error(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Could not import offers.",
+                )
+            }
+        }
+    }
+    if tx.commit().await.is_err() {
+        return error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Could not import offers.",
+        );
+    }
+    Json(serde_json::json!({"ids":ids,"skipped":skipped})).into_response()
 }
 async fn update_status(
     State(state): State<AppState>,

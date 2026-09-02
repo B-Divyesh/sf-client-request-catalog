@@ -1,21 +1,24 @@
-# Landing-page copy audit
+# Copy audit
 
-Audited 2026-09-01. No landing text exceeds 22 words or uses a banned marketing term.
+Audited 2026-09-02. Hyphenated terms count as one word. No line exceeds 22 words. No banned marketing word appears.
 
-| Visible copy | Words |
+| Landing-page text | Words |
 | --- | ---: |
 | Client Request Catalog | 3 |
+| Demo | 1 |
+| Owner workspace | 2 |
+| Privacy | 1 |
 | Create private catalogs for repeat clients | 6 |
-| Small businesses can share prices, collect clear requests, and keep checkout out of the conversation. | 14 |
+| Small businesses share prices, collect clear requests, and manage each offer without running a checkout. | 14 |
 | Try it with sample data | 6 |
-| See a filled catalog in one click. | 8 |
+| One click opens a filled owner workspace. | 7 |
 | Set up your catalog | 4 |
-| Prices require a private link. | 5 |
-| Requests arrive in one owner inbox. | 6 |
-| No analytics or tracking scripts. | 5 |
+| Free to use. | 3 |
+| Requires an internet connection. | 4 |
+| No analytics or tracking. | 4 |
 | Client view | 2 |
 | Show only the offers a client needs | 7 |
-| Fixed-price and quote-first offers can sit together. | 7 |
+| One catalog can show fixed prices and offers that need a quote. | 12 |
 | Maintenance visit | 2 |
 | Fixed price | 2 |
 | Replacement fitting set | 3 |
@@ -23,28 +26,31 @@ Audited 2026-09-01. No landing text exceeds 22 words or uses a banned marketing 
 | Repeat supplies | 2 |
 | Previous order | 2 |
 | How it works | 3 |
-| From private link to clear request | 6 |
+| From private client link to clear request | 7 |
 | Set your business name. | 4 |
 | Create the owner workspace with Microsoft sign-in. | 7 |
 | Share the catalog. | 3 |
-| Only someone with that opaque link can view its prices. | 10 |
+| Only people with that private client link can view its prices. | 11 |
 | Reply from the inbox. | 4 |
 | Review selected offers, contact details, and notes together. | 8 |
-| Clear boundaries | 2 |
+| Charges and availability | 3 |
 | This is not a checkout | 5 |
 | It does not charge clients, reserve stock, or promise availability. | 10 |
 | The business confirms every request directly. | 6 |
-| Private request catalogs for small businesses · Version 1.3 | 8 |
+| Private request catalogs for small businesses. | 6 |
 | Original illustration generated with Azure AI Foundry. | 7 |
+| Terms | 1 |
 | Built by Param Factory | 4 |
+
+The metadata description has 14 words. The illustration alt text has 12 words.
 
 ## Terminology
 
-| Concept | Term used |
+| Concept | Chosen words |
 | --- | --- |
-| A customer's access credential | client link |
-| A selectable service or product | offer |
-| The submitted collection | request |
-| The business management area | owner workspace |
-| Owner identity | Microsoft sign-in |
-| Non-persistent sample mode | demo |
+| Link granting catalog access | private client link, then client link |
+| Catalog entry | offer |
+| Client submission | request |
+| Business-side screen | owner workspace |
+| Offer without a listed price | needs a quote |
+| Non-persistent sample | demo |
