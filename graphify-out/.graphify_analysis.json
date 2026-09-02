@@ -380,13 +380,8 @@
       "degree": 16
     },
     {
-      "id": "backend_src_main_authstate",
-      "label": "AuthState",
-      "degree": 14
-    },
-    {
-      "id": "backend_src_main_create_client",
-      "label": "create_client()",
+      "id": "src_main_renderowner",
+      "label": "renderOwner()",
       "degree": 14
     },
     {
@@ -395,39 +390,33 @@
       "degree": 14
     },
     {
-      "id": "src_main_renderowner",
-      "label": "renderOwner()",
+      "id": "backend_src_main_create_client",
+      "label": "create_client()",
       "degree": 14
     },
     {
-      "id": "backend_src_main_set_client_offers",
-      "label": "set_client_offers()",
-      "degree": 13
+      "id": "backend_src_main_authstate",
+      "label": "AuthState",
+      "degree": 14
     },
     {
       "id": "src_main_shell",
       "label": "shell()",
       "degree": 13
+    },
+    {
+      "id": "backend_src_main_set_client_offers",
+      "label": "set_client_offers()",
+      "degree": 13
     }
   ],
   "surprises": [
     {
-      "source": "AppState",
-      "target": "Arc",
+      "source": "app()",
+      "target": "AppState",
       "source_files": [
         "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 5 \u2192 community 2"
-    },
-    {
-      "source": "AppState",
-      "target": "Option",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
+        "backend/src/main.rs"
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
@@ -435,10 +424,10 @@
     },
     {
       "source": "AuthState",
-      "target": "Option",
+      "target": "TestIdentity",
       "source_files": [
         "backend/src/main.rs",
-        ""
+        "backend/src/main.rs"
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
@@ -464,7 +453,18 @@
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
-      "note": "Bridges community 2 \u2192 community 11"
+      "note": "Bridges community 11 \u2192 community 2"
+    },
+    {
+      "source": "AppState",
+      "target": "Arc",
+      "source_files": [
+        "backend/src/main.rs",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 2 \u2192 community 5"
     }
   ],
   "tokens": {
