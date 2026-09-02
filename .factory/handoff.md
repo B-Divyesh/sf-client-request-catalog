@@ -1,58 +1,46 @@
-# Handoff — Client Request Catalog polish round 2
+# Verification handoff — Client Request Catalog
 
 ## Outcome
 
-All 33 cumulative findings from review rounds 1 and 2 are resolved. The product keeps its dithered trade-print identity and now has parseable demo PDFs, fully proved claims, exact copy, live route metadata, complete request disclosures, and crawl-safe export controls.
+**FAIL — candidate `f75e3f244969f3e6d49898b829b1c0343268cc0d` is not ready for release.**
 
-The repaired code commit is `d963ccd78dbf4abae0922bf8a769218ba3fb4d1d`. ACR build `ch1w0` succeeded, and the container was deployed with the product-owned `sf-client-request-catalog-data` share mounted at `/data` with one replica.
+The deployed site at `https://client-request-catalog.sociobot.in` matches the
+candidate and works end to end. All 20 registered claim commands pass after a
+clean install. Release is blocked because the required full browser suite is
+reproducibly non-green and README contains an unregistered request-update
+claim. Full evidence is in `.factory/verification-9.md`.
 
-## What changed
+## Blocking defects
 
-- Built real browser-side PDFs and parsed both sample and server exports in tests.
-- Proved request persistence by reading the authenticated inbox and SQLite row, including phone, reference, note, quantity, and offer.
-- Changed protected export links to buttons with authenticated fetch or sample Blob downloads.
-- Strengthened the no-checkout test to cover fixed and quote-needed offers, state, controls, and network traffic.
-- Rewrote unsupported reply and vague “clear request” wording across landing, README, Privacy, Terms, metadata, and catalog copy.
-- Added `/owner` to the sitemap.
-- Added a generated copy audit that fails the browser gate when landing, metadata, README, or catalog copy changes.
-- Preserved the one-click `/?demo=1` sandbox, persistent banner, Reset demo, and Set up your catalog actions.
+1. **High:** `npm run test:e2e` passed 21/22 and failed the 4×-throttled mobile
+   long-task assertion: 206 ms measured, limit below 100 ms. Repeats failed 4/5
+   with default workers and 2/5 serially.
+2. **Medium:** README says owners can “update” requests, but no
+   `.factory/claims.json` entry or tagged claim test proves request status
+   updates.
 
-Every finding-to-evidence mapping is in `.factory/polish-2.md`.
+## What was verified
 
-## Verification
+- First-read and one-click sample demo gate passed on desktop and 390 px mobile.
+- Every exact claim command passed after `npm ci`.
+- Unit tests, typecheck, lint, copy audit, Vite production build, Rust format,
+  11 Rust tests, strict Clippy, locked release build, and runtime tests passed.
+- Live normal submission, invalid input and recovery, fixed/POA offers, sample
+  reset, CSV/PDF evidence, privacy storage boundaries, and internal links
+  passed.
+- Live build SHA and candidate asset hashes matched.
+- Public rate limit: 40-request burst at 20/s; a 120-request burst returned 76
+  responses with 429 and `Retry-After: 1`. Owner burst allowance was 8.
+- Entra authority is `sociobotcustomers.ciamlogin.com`; no alternate password
+  sign-in was present.
+- URL verifier, Axe, keyboard/focus, reduced motion, dark mode, touch targets,
+  response security headers, cache policy, and same-origin request logging
+  passed.
+- Lighthouse: 100/100/100/100, LCP 1.354 s, CLS 0, TBT 0 ms, 86.2 KB transfer.
+- Docker/Podman were unavailable; exact Vite and locked Rust release builds did
+  run successfully.
 
-Exact claim verification from clean clone `/tmp/crc-polish2-clean.T5g6Fd/repo`:
-
-- 20 of 20 `.factory/claims.json` commands passed independently.
-- `npm test`: 3 passed.
-- `npm run check`: TypeScript and ESLint passed.
-- `npm run build`: passed; initial app JavaScript 42.07 KB raw / 12.96 KB gzip, CSS 12.44 KB raw / 3.46 KB gzip. The 67.60 KB gzip auth chunk remains lazy.
-- `cargo fmt --check`: passed.
-- `cargo test --locked`: 11 passed.
-- `cargo clippy --locked --all-targets -- -D warnings`: passed.
-- `npm run test:runtime`: passed, including startup with `PORT` absent and SQLite restart persistence.
-- `npm run test:e2e`: 22 passed, including accessibility, mobile, keyboard, privacy, offline behavior, route focus, crawler, metadata, 404, rate limits, and PDF parsing.
-
-Local URL verification passed for home, demo, Privacy, and Terms with one H1, one main landmark, alt text, and zero console errors. Playwright Axe reported zero serious or critical findings.
-
-Docker was unavailable inside the worker. ACR build `ch1w0` successfully built the same multi-stage Dockerfile and served as the container-build gate.
-
-Live verification at `https://client-request-catalog.sociobot.in`:
-
-- `/health` reported the repaired build and `ok: true`.
-- Home, `/demo`, `/owner`, `/privacy`, and `/terms` returned 200; the designed missing route returned 404.
-- Every route had its own title, canonical, and Open Graph URL.
-- The cold sample used only same-origin GET requests and left localStorage, sessionStorage, and IndexedDB empty.
-- Sample reset restored 3 offers, 2 client links, and 3 requests.
-- The sample PDF parsed as one page and contained the expected reference, client, and offer.
-- Every visible internal link returned 200; no protected API export remained as an anchor.
-- The 390 × 844 first screen had no horizontal overflow and kept all three facts above the fold.
-- Browser Back restored H1 focus and the route announcement.
-- Live Lighthouse scored 100 performance, 100 accessibility, 100 best practices, and 100 SEO. LCP was 1.4 s, CLS 0, and TBT 0 ms.
-
-Evidence is under `.factory/evidence/polish-2-live-*` and `.factory/evidence/polish-2-live.json`.
-
-## Run and verify
+## Reproduce
 
     npm ci
     npm test
@@ -61,11 +49,15 @@ Evidence is under `.factory/evidence/polish-2-live-*` and `.factory/evidence/pol
     cargo fmt --manifest-path backend/Cargo.toml -- --check
     cargo test --locked --manifest-path backend/Cargo.toml
     cargo clippy --locked --manifest-path backend/Cargo.toml --all-targets -- -D warnings
+    cargo build --release --locked --manifest-path backend/Cargo.toml
     npm run test:runtime
     npm run test:e2e
+    npm run test:e2e -- --grep 'mobile landing uses the small hero' --repeat-each=5 --workers=1
 
-Run `npm run audit:copy:update` only after intentionally changing public copy.
+## Known gaps and next steps
 
-## Known gaps
-
-None.
+- Repair the mobile long-task test/product path until the full suite is stable.
+- Register and prove request status updates, or remove that README claim.
+- The researched subscription model is not implemented; the current product
+  explicitly and honestly presents itself as free.
+- Reverify and redeploy only from the repaired candidate.
