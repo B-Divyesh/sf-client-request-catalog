@@ -39,14 +39,41 @@ function setMeta(title: string, description: string, canonicalPath: string) {
   canonical.href = `https://client-request-catalog.sociobot.in${canonicalPath}`;
 }
 
+function focusAndAnnounceRouteHeading() {
+  const heading = document.querySelector<HTMLHeadingElement>('main h1');
+  if (!heading) return;
+  heading.tabIndex = -1;
+  heading.focus();
+  const announcer = document.querySelector<HTMLElement>('.route-announcer');
+  if (!announcer) return;
+  const announcement = heading.textContent?.trim() || document.title;
+  announcer.textContent = '';
+  requestAnimationFrame(() => { announcer.textContent = announcement; });
+}
+
 function focusRouteHeading() {
   if (sessionStorage.getItem('crc-focus-heading') !== '1') return;
   sessionStorage.removeItem('crc-focus-heading');
-  requestAnimationFrame(() => {
-    const heading = document.querySelector<HTMLHeadingElement>('main h1');
-    if (heading) { heading.tabIndex = -1; heading.focus(); }
-  });
+  requestAnimationFrame(focusAndAnnounceRouteHeading);
 }
+
+function restoreRouteFocus() {
+  sessionStorage.removeItem('crc-focus-heading');
+  requestAnimationFrame(focusAndAnnounceRouteHeading);
+}
+
+// Cross-document history restoration can reload a document instead of putting
+// it in the back/forward cache (for example when its response is no-store).
+// Leave the existing one-shot route marker for that next document as well.
+window.addEventListener('pagehide', () => {
+  sessionStorage.setItem('crc-focus-heading', '1');
+});
+window.addEventListener('pageshow', event => {
+  if (event.persisted) restoreRouteFocus();
+});
+window.addEventListener('popstate', () => {
+  if (!location.hash) restoreRouteFocus();
+});
 document.addEventListener('click', event => {
   const link = (event.target as Element).closest<HTMLAnchorElement>('a[href]');
   if (link && link.origin === location.origin && link.pathname !== location.pathname) sessionStorage.setItem('crc-focus-heading', '1');
@@ -57,7 +84,7 @@ function shell(content: string, options: { title: string; description: string; c
   const banner = options.demo ? '<aside class="demo-banner" aria-label="Demo status"><strong>Demo — sample data, nothing is saved</strong><span><button id="reset-demo" type="button">Reset demo</button><a href="/owner">Start for real</a></span></aside>' : '';
   const responsiveHeroSources = '<source type="image/avif" srcset="/assets/request-desk-480.avif 480w, /assets/request-desk-720.avif 720w, /assets/request-desk-960.avif 960w" sizes="(max-width: 700px) calc(100vw - 36px), 520px" /><source type="image/webp" srcset="/assets/request-desk-480.webp 480w, /assets/request-desk-720.webp 720w, /assets/request-desk.webp 960w" sizes="(max-width: 700px) calc(100vw - 36px), 520px" />';
   const optimizedContent = content.replace(/<source type="image\/webp" srcset="\/assets\/request-desk-480\.webp 480w, \/assets\/request-desk\.webp 960w" sizes="[^"]+" \/>/g, responsiveHeroSources);
-  app.innerHTML = `<header class="site-head"><a class="wordmark" href="/" aria-label="Request Slip home">REQUEST<br><i>SLIP</i></a><nav aria-label="Primary"><a href="/demo">Demo</a><a href="/owner">Owner workspace</a><a href="/privacy">Privacy</a></nav></header>${banner}<main id="main" tabindex="-1">${optimizedContent}</main><footer><span>Private request catalogs for small businesses · Version 1.3</span><span>Original illustration generated with Azure AI Foundry.</span><span><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>Built by Param Factory</span></span></footer><div class="route-announcer" aria-live="polite">${esc(options.title)}</div>`;
+  app.innerHTML = `<header class="site-head"><a class="wordmark" href="/" aria-label="Request Slip home">REQUEST<br><i>SLIP</i></a><nav aria-label="Primary"><a href="/demo">Demo</a><a href="/owner">Owner workspace</a><a href="/privacy">Privacy</a></nav></header>${banner}<main id="main" tabindex="-1">${optimizedContent}</main><footer><span>Private request catalogs for small businesses · Version 1.3</span><span>Original illustration generated with Azure AI Foundry.</span><span><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>Built by Param Factory</span></span></footer><div class="route-announcer" role="status" aria-live="polite" aria-atomic="true"></div>`;
   focusRouteHeading();
 }
 

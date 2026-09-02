@@ -213,6 +213,24 @@ test('mobile landing uses the small hero and keeps auth work off the main route'
   expect(metrics.loadedAuthChunk).toBe(false);
 });
 
+test('browser Back and Forward restore focus and announce the restored route heading', async ({ page }) => {
+  await page.goto('/');
+  const landingHeading = page.getByRole('heading', { level: 1 });
+  await expect(landingHeading).toHaveText('Create private catalogs for repeat clients');
+
+  await page.getByRole('link', { name: 'Privacy' }).first().click();
+  const privacyHeading = page.getByRole('heading', { level: 1 });
+  await expect(privacyHeading).toBeFocused();
+
+  await page.goBack();
+  await expect(landingHeading).toBeFocused();
+  await expect(page.locator('.route-announcer')).toHaveText(await landingHeading.textContent() || '');
+
+  await page.goForward();
+  await expect(privacyHeading).toBeFocused();
+  await expect(page.locator('.route-announcer')).toHaveText(await privacyHeading.textContent() || '');
+});
+
 test('desktop/mobile keyboard, accessibility, offline, metadata and limits pass', async ({ page, request, browser }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
