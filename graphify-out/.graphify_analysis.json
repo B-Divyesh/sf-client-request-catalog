@@ -343,18 +343,18 @@
       "degree": 14
     },
     {
-      "id": "backend_src_main_create_client",
-      "label": "create_client()",
-      "degree": 14
-    },
-    {
       "id": "backend_src_main_test_state",
       "label": "test_state()",
       "degree": 14
     },
     {
-      "id": "backend_src_main_set_client_offers",
-      "label": "set_client_offers()",
+      "id": "backend_src_main_create_client",
+      "label": "create_client()",
+      "degree": 14
+    },
+    {
+      "id": "src_main_renderowner",
+      "label": "renderOwner()",
       "degree": 13
     },
     {
@@ -363,33 +363,22 @@
       "degree": 13
     },
     {
-      "id": "src_main_renderowner",
-      "label": "renderOwner()",
+      "id": "backend_src_main_set_client_offers",
+      "label": "set_client_offers()",
       "degree": 13
     }
   ],
   "surprises": [
     {
-      "source": "Overview",
-      "target": "HeaderMap",
+      "source": "AppState",
+      "target": "Arc",
       "source_files": [
         "backend/src/main.rs",
         ""
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
-      "note": "Bridges community 3 \u2192 community 1"
-    },
-    {
-      "source": "open_db()",
-      "target": "Path",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 3 \u2192 community 2"
+      "note": "Bridges community 1 \u2192 community 3"
     },
     {
       "source": "client_links()",
@@ -400,7 +389,18 @@
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
-      "note": "Bridges community 2 \u2192 community 1"
+      "note": "Bridges community 1 \u2192 community 2"
+    },
+    {
+      "source": "app()",
+      "target": "AppState",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 2 \u2192 community 3"
     }
   ],
   "tokens": {
