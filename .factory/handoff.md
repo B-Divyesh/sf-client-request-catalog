@@ -1,50 +1,44 @@
-# Client Request Catalog — adversarial review 1 handoff
+# Handoff — polish round 1
 
-## Result
+## Outcome
 
-**FAIL — 23 findings: 4 blocking, 10 major, and 9 minor.**
+All 23 findings from `.factory/review-1.md` are resolved. The one-click sample is now an owner-facing, memory-only workspace. Real owners can edit, archive, restore, delete, and import offers. Expiration and exported request contents have direct behavioral proof.
 
-The complete report is in `.factory/review-1.md`. Product code was not
-modified. The pre-existing modified `graphify-out` files were left untouched.
+The product remains a Rust axum and SQLite backend serving a Vite TypeScript frontend from one container. The dithered trade-print visual system is unchanged.
 
-## What was reviewed
+## Run and verify
 
-- Cold live landing page at 390 × 844 and 1440 × 900.
-- Every landing-page and README sentence, with word counts.
-- One-click demo entry, sample submission, reset, storage namespaces, and live
-  request origins.
-- Every `.factory/claims.json` command from a separate clean clone.
-- Prior handoff and the previously repaired browser-history focus behavior.
-- Titles, descriptions, canonicals, OG/Twitter data, icons, H1/heading
-  structure, 404, deep links, Back/Forward focus, link crawl, headers,
-  responsive layout, reduced motion, and visual identity.
-- Accessibility with the fleet URL verifier and Playwright axe integration.
-- Missed leverage and unnecessary-AI/key checks.
+    npm ci
+    npm test
+    npm run check
+    npm run build
+    npm run test:runtime
+    cargo fmt --manifest-path backend/Cargo.toml -- --check
+    cargo test --locked --manifest-path backend/Cargo.toml
+    cargo clippy --locked --manifest-path backend/Cargo.toml --all-targets -- -D warnings
+    npm run test:e2e
 
-## Verification performed
+Every exact command in `.factory/claims.json` was also run independently from clean clone `/tmp/crc-claims.hZARJn/repo`. All 19 commands passed.
 
-```sh
-npm ci
-npm test
-npm run check
-npm run build
-cargo test --locked --manifest-path backend/Cargo.toml
-npm run test:e2e -- --grep @claim:<each-id>
-```
+## Local evidence
 
-Results: 12/12 registered claim commands exited successfully, unit tests were
-1/1, Rust tests were 11/11, typecheck/lint/build passed, and `dist/` was
-produced. The live URL verifier passed. Playwright axe found zero serious or
-critical issues on all public routes checked.
+- `npm test`: 3 passed.
+- `npm run check`: TypeScript and ESLint passed.
+- `npm run build`: `dist/` produced. Initial JavaScript is 40.69 KB raw and 12.42 KB gzip. Initial CSS is 12.44 KB raw and 3.46 KB gzip.
+- `cargo test`: 11 passed.
+- `npm run test:e2e`: 21 passed.
+- Playwright axe: zero serious or critical issues on home, demo, owner, privacy, terms, and 404 routes.
+- URL verifier: home and `/?demo=1` passed title, language, H1, main, alt, button-label, and console checks.
+- Visual evidence: `.factory/evidence/landing-mobile.png`, `.factory/evidence/demo-owner-desktop.png`, and `.factory/evidence/demo-owner-mobile.png`.
 
-## What remains
+## Deployment
 
-The four blockers are: no owner-facing sandbox demo; expiration is not tested
-by `private-prices`; exports are tested without a request row; and offers
-cannot be edited, archived, or removed. The report also records unlisted
-claims, missing connection/price facts, missing CSV offer import, terminology
-and sentence-length issues, a vague demo action/heading, and stale `og:url`
-metadata on non-home routes. Private-catalog titles can also exceed the title
-limit and omit the product name.
+- Deployment target: `https://client-request-catalog.sociobot.in`
+- Container app scope: `sf-client-request-catalog`
+- Durable data path: `/data`, one replica through the fleet deployment script.
 
-No deployment or infrastructure action was taken.
+The final source commit, deployed `/health` build SHA, live URL verifier results, and Lighthouse measurements are appended after deployment.
+
+## Known gaps
+
+None. The paid tier remains intentionally absent because no owned Sociobot billing product is enabled. The free workflow is complete.
