@@ -318,11 +318,6 @@
       "degree": 16
     },
     {
-      "id": "backend_src_main_test_state",
-      "label": "test_state()",
-      "degree": 14
-    },
-    {
       "id": "backend_src_main_create_client",
       "label": "create_client()",
       "degree": 14
@@ -333,13 +328,18 @@
       "degree": 14
     },
     {
-      "id": "backend_src_main_set_client_offers",
-      "label": "set_client_offers()",
-      "degree": 13
+      "id": "backend_src_main_test_state",
+      "label": "test_state()",
+      "degree": 14
     },
     {
       "id": "src_main_shell",
       "label": "shell()",
+      "degree": 13
+    },
+    {
+      "id": "backend_src_main_set_client_offers",
+      "label": "set_client_offers()",
       "degree": 13
     },
     {
@@ -358,18 +358,29 @@
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
-      "note": "Bridges community 3 \u2192 community 1"
+      "note": "Bridges community 1 \u2192 community 3"
     },
     {
-      "source": "client_links()",
-      "target": "SqlitePool",
+      "source": "AppState",
+      "target": "Arc",
       "source_files": [
         "backend/src/main.rs",
         ""
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
-      "note": "Bridges community 2 \u2192 community 3"
+      "note": "Bridges community 1 \u2192 community 2"
+    },
+    {
+      "source": "AppState",
+      "target": "Window",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 1 \u2192 community 8"
     },
     {
       "source": "create_client()",
@@ -380,7 +391,7 @@
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
-      "note": "Bridges community 10 \u2192 community 1"
+      "note": "Bridges community 1 \u2192 community 10"
     },
     {
       "source": "replace_client_offers()",
@@ -392,17 +403,6 @@
       "confidence": "EXTRACTED",
       "relation": "references",
       "note": "Bridges community 10 \u2192 community 2"
-    },
-    {
-      "source": "export_csv()",
-      "target": "request_rows()",
-      "source_files": [
-        "backend/src/main.rs",
-        "backend/src/main.rs"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "calls",
-      "note": "Bridges community 2 \u2192 community 1"
     }
   ],
   "tokens": {
