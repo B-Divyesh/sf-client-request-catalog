@@ -1,0 +1,133 @@
+{
+  "base": "https://client-request-catalog.sociobot.in",
+  "routes": {
+    "/": {
+      "status": 200,
+      "title": "Client Request Catalog — share private prices",
+      "canonical": "https://client-request-catalog.sociobot.in/",
+      "ogUrl": "https://client-request-catalog.sociobot.in/",
+      "h1": 1,
+      "main": 1,
+      "seriousCriticalAxe": 0
+    },
+    "/demo": {
+      "status": 200,
+      "title": "Demo — Client Request Catalog",
+      "canonical": "https://client-request-catalog.sociobot.in/demo",
+      "ogUrl": "https://client-request-catalog.sociobot.in/demo",
+      "h1": 1,
+      "main": 1,
+      "seriousCriticalAxe": 0
+    },
+    "/owner": {
+      "status": 200,
+      "title": "Owner workspace — Client Request Catalog",
+      "canonical": "https://client-request-catalog.sociobot.in/owner",
+      "ogUrl": "https://client-request-catalog.sociobot.in/owner",
+      "h1": 1,
+      "main": 1,
+      "seriousCriticalAxe": 0
+    },
+    "/privacy": {
+      "status": 200,
+      "title": "Privacy — Client Request Catalog",
+      "canonical": "https://client-request-catalog.sociobot.in/privacy",
+      "ogUrl": "https://client-request-catalog.sociobot.in/privacy",
+      "h1": 1,
+      "main": 1,
+      "seriousCriticalAxe": 0
+    },
+    "/terms": {
+      "status": 200,
+      "title": "Terms — Client Request Catalog",
+      "canonical": "https://client-request-catalog.sociobot.in/terms",
+      "ogUrl": "https://client-request-catalog.sociobot.in/terms",
+      "h1": 1,
+      "main": 1,
+      "seriousCriticalAxe": 0
+    },
+    "/missing-page": {
+      "status": 404,
+      "title": "Page not found — Client Request Catalog",
+      "canonical": "https://client-request-catalog.sociobot.in/404.html",
+      "ogUrl": "https://client-request-catalog.sociobot.in/404.html",
+      "h1": 1,
+      "main": 1,
+      "seriousCriticalAxe": 0
+    }
+  },
+  "demo": {
+    "oneClickUrl": "https://client-request-catalog.sociobot.in/?demo=1",
+    "banner": true,
+    "seeded": {
+      "offers": 3,
+      "links": 2,
+      "requests": 3
+    },
+    "resetCount": 3,
+    "sampleRow": "DEMO-0424NEW\n\nLive Sample Client · live-sample@example.test · +1 555 0110\nClient reference: LIVE-DEMO-2\nSample-only note.\n\nQuarterly maintenance visit x 1; Replacement fitting set x 1\n9/2/2026\nStatus for DEMO-0424\nnew\nquoted\nclosed\nExport this request\nDelete this request",
+    "pdfPages": 1,
+    "pdfHasReference": true,
+    "pdfHasClient": true,
+    "pdfHasOffer": true,
+    "protectedExportAnchors": 0,
+    "checkoutControls": 0,
+    "requestMethods": [
+      "GET"
+    ],
+    "requestOrigins": [
+      "https://client-request-catalog.sociobot.in"
+    ],
+    "storage": {
+      "localStorage": [],
+      "sessionStorage": [],
+      "indexedDb": []
+    },
+    "internalLinkStatuses": [
+      {
+        "href": "https://client-request-catalog.sociobot.in/?demo=1#main",
+        "status": 200
+      },
+      {
+        "href": "https://client-request-catalog.sociobot.in/",
+        "status": 200
+      },
+      {
+        "href": "https://client-request-catalog.sociobot.in/?demo=1",
+        "status": 200
+      },
+      {
+        "href": "https://client-request-catalog.sociobot.in/owner",
+        "status": 200
+      },
+      {
+        "href": "https://client-request-catalog.sociobot.in/privacy",
+        "status": 200
+      },
+      {
+        "href": "https://client-request-catalog.sociobot.in/owner",
+        "status": 200
+      },
+      {
+        "href": "https://client-request-catalog.sociobot.in/privacy",
+        "status": 200
+      },
+      {
+        "href": "https://client-request-catalog.sociobot.in/terms",
+        "status": 200
+      }
+    ]
+  },
+  "mobile": {
+    "headline": "Create private catalogs for repeat clients",
+    "action": "Try it with sample data",
+    "factsAboveFold": true,
+    "horizontalOverflow": false
+  },
+  "focus": {
+    "privacyFocused": true,
+    "homeFocused": true
+  },
+  "consoleErrors": [],
+  "pageErrors": []
+}

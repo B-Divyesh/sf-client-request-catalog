@@ -1,0 +1,14 @@
+{
+  "url": "https://client-request-catalog.sociobot.in/terms",
+  "loadMs": 541,
+  "errors": [],
+  "a11y": {
+    "title": "Terms — Client Request Catalog",
+    "lang": "en",
+    "h1": 1,
+    "main": true,
+    "imgsMissingAlt": 0,
+    "buttonsUnlabeled": 0,
+    "textLength": 678
+  }
+}
