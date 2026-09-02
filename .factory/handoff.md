@@ -90,6 +90,34 @@ Post-deploy acceptance checks `/health` build identity, main routes, the
 designed 404, security/cache headers, 429 policy, same-origin browser traffic,
 desktop and 390 px rendering, keyboard navigation, and Axe results.
 
+Live acceptance first ran against source `b467776b2355e7e9338b86ff17adcee4be79985c`:
+
+- `/health` returned that exact SHA with `ok: true`.
+- `/`, `/demo`, `/owner`, `/privacy`, `/terms`, `robots.txt`, and `sitemap.xml`
+  returned 200. `/missing-page` returned the designed 404.
+- The URL verifier found zero console errors on all five main routes. A live
+  Playwright pass found zero Axe violations on those routes and the 404, no
+  horizontal overflow, no visible sub-44 px controls at 390×844, working skip
+  focus, 0.01 ms reduced-motion durations, and zero dark-mode Axe violations.
+- Every observed page request was same-origin. A fresh offline initial load
+  failed as documented. The live demo status control displayed `quoted` and
+  announced “Status saved as quoted.”
+- A 120-request public burst returned 43 successful responses and 77 HTTP 429
+  responses. A 20-request owner burst returned 8 route responses and 12 HTTP
+  429 responses. Every 429 included `Retry-After: 1`.
+- The production Entra configuration used the expected Sociobot customer
+  authority, expected client ID, `/auth/callback`, and `test_mode: false`.
+- Live and local JS hashes both equalled
+  `8b32b33a67e700c5ed8ba224b508619bf8dc3bc9f65eff52498d9488d430e00b`;
+  CSS hashes both equalled
+  `ffb42d630d004a89afb02a83acaf89e57f0cf45e8922703149b4dee3228f556e`.
+- Live Lighthouse scored Performance 100, Accessibility 100, Best Practices
+  100, and SEO 100, with LCP 1.4 s, TBT 0 ms, CLS 0, and 85 KiB transferred.
+
+This evidence-only handoff update is redeployed as the final release. Its
+post-deploy `/health` identity is checked against `git rev-parse HEAD`; the
+application assets are unchanged from the hashes above.
+
 ## Known gaps
 
 - No release-blocking gap remains.
