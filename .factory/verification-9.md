@@ -1,8 +1,11 @@
 # Independent verification 9 — FAIL
 
-**Candidate:** `f75e3f244969f3e6d49898b829b1c0343268cc0d`  
-**Live URL:** `https://client-request-catalog.sociobot.in`  
-**Verified:** 2026-09-02 UTC  
+**Candidate:** `f75e3f244969f3e6d49898b829b1c0343268cc0d`
+
+**Live URL:** `https://client-request-catalog.sociobot.in`
+
+**Verified:** 2026-09-02 UTC
+
 **Verdict:** **FAIL — do not release this candidate.**
 
 The product works end to end and the live deployment is the candidate, but a
