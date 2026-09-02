@@ -1,3 +1,4 @@
+import { esc, shell } from "./shell";
 import "./style.css";
 
 type Product = {
@@ -53,7 +54,6 @@ type ImportRow = {
 
 const $ = <T extends Element>(selector: string) =>
   document.querySelector(selector) as T;
-const app = $("#app");
 const path = location.pathname;
 const query = new URLSearchParams(location.search);
 const clientToken = query.get("client") || "";
@@ -151,11 +151,6 @@ const freshDemoData = (): OwnerData => ({
 });
 let demoData = freshDemoData();
 
-function esc(value: unknown) {
-  const node = document.createElement("div");
-  node.textContent = String(value ?? "");
-  return node.innerHTML;
-}
 function money(cents: number | null, currency = "USD") {
   return cents === null
     ? "Price on application"
@@ -174,119 +169,6 @@ function api(url: string, init?: RequestInit) {
       ...(init?.headers || {}),
     },
   });
-}
-
-function setMeta(title: string, description: string, canonicalPath: string) {
-  document.title = title;
-  const values: Array<[string, string, string]> = [
-    ["name", "description", description],
-    ["property", "og:title", title],
-    ["property", "og:description", description],
-    [
-      "property",
-      "og:image",
-      "https://client-request-catalog.sociobot.in/assets/og-request-desk.webp",
-    ],
-    ["property", "og:type", "website"],
-    [
-      "property",
-      "og:url",
-      `https://client-request-catalog.sociobot.in${canonicalPath}`,
-    ],
-    ["name", "twitter:card", "summary_large_image"],
-    ["name", "twitter:title", title],
-    ["name", "twitter:description", description],
-  ];
-  for (const [attribute, key, content] of values) {
-    let meta = document.head.querySelector<HTMLMetaElement>(
-      `meta[${attribute}="${key}"]`,
-    );
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute(attribute, key);
-      document.head.append(meta);
-    }
-    meta.content = content;
-  }
-  let canonical = document.head.querySelector<HTMLLinkElement>(
-    'link[rel="canonical"]',
-  );
-  if (!canonical) {
-    canonical = document.createElement("link");
-    canonical.rel = "canonical";
-    document.head.append(canonical);
-  }
-  canonical.href = `https://client-request-catalog.sociobot.in${canonicalPath}`;
-}
-
-function focusAndAnnounceRouteHeading() {
-  const heading = document.querySelector<HTMLHeadingElement>("main h1");
-  if (!heading) return;
-  heading.tabIndex = -1;
-  heading.focus();
-  const announcer = document.querySelector<HTMLElement>(".route-announcer");
-  if (!announcer) return;
-  const announcement = heading.textContent?.trim() || document.title;
-  announcer.textContent = "";
-  requestAnimationFrame(() => {
-    announcer.textContent = announcement;
-  });
-}
-
-function focusRouteHeading() {
-  if (sessionStorage.getItem("crc-focus-heading") !== "1") return;
-  sessionStorage.removeItem("crc-focus-heading");
-  requestAnimationFrame(focusAndAnnounceRouteHeading);
-}
-
-function restoreRouteFocus() {
-  sessionStorage.removeItem("crc-focus-heading");
-  requestAnimationFrame(focusAndAnnounceRouteHeading);
-}
-
-// Cross-document history restoration can reload a document instead of putting
-// it in the back/forward cache (for example when its response is no-store).
-// Leave the existing one-shot route marker for that next document as well.
-window.addEventListener("pagehide", () => {
-  sessionStorage.setItem("crc-focus-heading", "1");
-});
-window.addEventListener("pageshow", (event) => {
-  if (event.persisted) restoreRouteFocus();
-});
-window.addEventListener("popstate", () => {
-  if (!location.hash) restoreRouteFocus();
-});
-document.addEventListener("click", (event) => {
-  const link = (event.target as Element).closest<HTMLAnchorElement>("a[href]");
-  if (
-    link &&
-    link.origin === location.origin &&
-    link.pathname !== location.pathname
-  )
-    sessionStorage.setItem("crc-focus-heading", "1");
-});
-
-function shell(
-  content: string,
-  options: {
-    title: string;
-    description: string;
-    canonical: string;
-    demo?: boolean;
-  },
-) {
-  setMeta(options.title, options.description, options.canonical);
-  const banner = options.demo
-    ? '<aside class="demo-banner" aria-label="Demo status"><strong>Demo — sample data, nothing is saved</strong><span><button id="reset-demo" type="button">Reset demo</button><a href="/owner">Set up your catalog</a></span></aside>'
-    : "";
-  const responsiveHeroSources =
-    '<source type="image/avif" srcset="/assets/request-desk-480.avif 480w, /assets/request-desk-720.avif 720w, /assets/request-desk-960.avif 960w" sizes="(max-width: 700px) calc(100vw - 36px), 520px" /><source type="image/webp" srcset="/assets/request-desk-480.webp 480w, /assets/request-desk-720.webp 720w, /assets/request-desk.webp 960w" sizes="(max-width: 700px) calc(100vw - 36px), 520px" />';
-  const optimizedContent = content.replace(
-    /<source type="image\/webp" srcset="\/assets\/request-desk-480\.webp 480w, \/assets\/request-desk\.webp 960w" sizes="[^"]+" \/>/g,
-    responsiveHeroSources,
-  );
-  app.innerHTML = `<header class="site-head"><a class="wordmark" href="/" aria-label="Client Request Catalog home">CLIENT REQUEST<br><i>CATALOG</i></a><nav aria-label="Primary"><a href="/?demo=1">Demo</a><a href="/owner">Owner workspace</a><a href="/privacy">Privacy</a></nav></header>${banner}<main id="main" tabindex="-1">${optimizedContent}</main><footer><span>Private request catalogs for small businesses · Version 1.4</span><span>Original illustration generated with Azure AI Foundry.</span><span><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>Built by Param Factory</span></span></footer><div class="route-announcer" role="status" aria-live="polite" aria-atomic="true"></div>`;
-  focusRouteHeading();
 }
 
 function renderLanding() {
@@ -767,7 +649,7 @@ function renderOwner(data: OwnerData, isDemo = false) {
     ? data.requests
         .map(
           (request) =>
-            `<li class="inbox-row"><div><strong>${esc(request.reference)}</strong><span class="status ${esc(request.status)}">${esc(request.status)}</span><p>${esc(request.name)} · ${esc(request.email)}${request.phone ? ` · ${esc(request.phone)}` : ""}${request.client_reference ? `<br>Client reference: ${esc(request.client_reference)}` : ""}${request.note ? `<br>${esc(request.note)}` : ""}</p><small>${esc(request.items)}</small></div><div class="request-actions"><time datetime="${esc(request.created_at)}">${new Date(request.created_at).toLocaleDateString()}</time><label class="visually-hidden" for="status-${request.id}">Status for ${esc(request.reference)}</label><select id="status-${request.id}" data-status="${request.id}"><option ${request.status === "new" ? "selected" : ""}>new</option><option ${request.status === "quoted" ? "selected" : ""}>quoted</option><option ${request.status === "closed" ? "selected" : ""}>closed</option></select><button class="button-outline export-request" data-request="${request.id}" type="button">Export this request</button><button class="danger delete-request" data-request="${request.id}" data-reference="${esc(request.reference)}" type="button">Delete this request</button></div></li>`,
+            `<li class="inbox-row"><div><strong>${esc(request.reference)}</strong><span class="status ${esc(request.status)}">${esc(request.status)}</span><p>${esc(request.name)} · ${esc(request.email)}${request.phone ? ` · ${esc(request.phone)}` : ""}${request.client_reference ? `<br>Client reference: ${esc(request.client_reference)}` : ""}${request.note ? `<br>${esc(request.note)}` : ""}</p><small>${esc(request.items)}</small></div><div class="request-actions"><time datetime="${esc(request.created_at)}">${new Date(request.created_at).toLocaleDateString()}</time><label class="visually-hidden" for="status-${request.id}">Status for ${esc(request.reference)}</label><select id="status-${request.id}" data-status="${request.id}"><option ${request.status === "new" ? "selected" : ""}>new</option><option ${request.status === "quoted" ? "selected" : ""}>quoted</option><option ${request.status === "closed" ? "selected" : ""}>closed</option></select><button class="button-outline export-request" data-request="${request.id}" type="button">Export this request</button><button class="danger delete-request" data-request="${request.id}" data-reference="${esc(request.reference)}" type="button">Delete this request</button><p class="request-status-message" role="status" aria-live="polite"></p></div></li>`,
         )
         .join("")
     : '<li class="empty"><h3>Your inbox is clear</h3><p>Create and share a private client link to receive requests.</p></li>';
@@ -871,17 +753,42 @@ function renderOwner(data: OwnerData, isDemo = false) {
     .forEach((select) =>
       select.addEventListener("change", async () => {
         const id = Number(select.dataset.status);
+        const rowElement = select.closest<HTMLElement>(".inbox-row");
+        const badge = rowElement?.querySelector<HTMLElement>(".status");
+        const message = rowElement?.querySelector<HTMLElement>(
+          ".request-status-message",
+        );
+        const previousStatus = badge?.textContent?.trim() || "new";
+        const nextStatus = select.value;
+        select.disabled = true;
         if (isDemo) {
           const row = demoData.requests.find((item) => item.id === id);
-          if (row) row.status = select.value;
+          if (row) row.status = nextStatus;
+          if (badge) {
+            badge.className = `status ${nextStatus}`;
+            badge.textContent = nextStatus;
+          }
+          if (message) message.textContent = `Status saved as ${nextStatus}.`;
+          select.disabled = false;
           return;
         }
         const response = await api(`/api/admin/requests/${id}`, {
           method: "PATCH",
-          body: JSON.stringify({ status: select.value }),
+          body: JSON.stringify({ status: nextStatus }),
         });
-        if (!response.ok)
-          window.alert("The request status could not be updated. Try again.");
+        if (response.ok) {
+          if (badge) {
+            badge.className = `status ${nextStatus}`;
+            badge.textContent = nextStatus;
+          }
+          if (message) message.textContent = `Status saved as ${nextStatus}.`;
+        } else {
+          select.value = previousStatus;
+          if (message)
+            message.textContent =
+              "The request status could not be updated. Try again.";
+        }
+        select.disabled = false;
       }),
     );
   document

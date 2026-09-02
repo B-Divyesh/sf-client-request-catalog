@@ -60,7 +60,7 @@ Generated from the built landing DOM, route metadata, README, and catalog descri
 | Open /owner to create the first owner workspace. | 8 | — |
 | Sociobot Microsoft Entra External ID is the only owner sign-in method. | 11 | — |
 | Owners can name the catalog, maintain offers, import CSV price sheets, and issue client links. | 15 | — |
-| They can review, update, export, or delete requests. | 8 | — |
+| They can change each request status, export it, or delete it. | 11 | — |
 | The product is free to use and requires an internet connection to load. | 13 | — |
 | One catalog can contain fixed prices and offers that need a quote. | 12 | — |
 | PORT defaults to 8080. | 4 | — |

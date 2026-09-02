@@ -696,6 +696,56 @@ test("@claim:owner-exports owner exports CSV and PDF", async ({
   expect(parsedDemoPdf.text).toContain("Quarterly maintenance visit x 1");
 });
 
+test("@claim:request-status-updates owner status changes are announced and persist", async ({
+  page,
+  request,
+}) => {
+  await ensureWorkspace(request);
+  const made = await request.post("/api/admin/clients", {
+    headers: ownerHeaders(),
+    data: { name: "Status Client", expires_in_days: 30, offer_ids: [1] },
+  });
+  const token = ((await made.json()) as { token: string }).token;
+  const created = await request.post(`/api/catalog/${token}/requests`, {
+    headers: { "x-forwarded-for": "198.51.100.87" },
+    data: {
+      name: "Status Requester",
+      email: "status@example.test",
+      items: [{ product_id: 1, quantity: 1 }],
+    },
+  });
+  expect(created.status()).toBe(200);
+  const reference = ((await created.json()) as { reference: string }).reference;
+
+  await authenticateOwnerPage(page);
+  await clientIp(page, 88);
+  await page.goto("/owner");
+  const requestRow = page.locator(".inbox-row").filter({ hasText: reference });
+  await expect(requestRow).toBeVisible();
+  await requestRow.locator("select[data-status]").selectOption("quoted");
+  await expect(requestRow.locator(".request-status-message")).toHaveText(
+    "Status saved as quoted.",
+  );
+  await expect(requestRow.locator(".status")).toHaveText("quoted");
+  await expect
+    .poll(async () => {
+      const overview = await (
+        await request.get("/api/admin/overview", { headers: ownerHeaders() })
+      ).json();
+      return overview.requests.find(
+        (row: { reference: string }) => row.reference === reference,
+      )?.status;
+    })
+    .toBe("quoted");
+
+  await page.reload();
+  const reloadedRow = page.locator(".inbox-row").filter({ hasText: reference });
+  await expect(reloadedRow.locator("select[data-status]")).toHaveValue(
+    "quoted",
+  );
+  await expect(reloadedRow.locator(".status")).toHaveText("quoted");
+});
+
 test("@claim:client-offer-visibility each client link has its assigned offers", async ({
   request,
 }) => {
@@ -934,49 +984,89 @@ test("@claim:entra-owner-auth owner identity uses Sociobot Entra and mobile term
 });
 
 test("mobile landing uses the small hero and keeps auth work off the main route", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  const session = await page.context().newCDPSession(page);
-  await session.send("Emulation.setCPUThrottlingRate", { rate: 4 });
-  await page.addInitScript(() => {
-    (window as typeof window & { __crcLongTasks: number }).__crcLongTasks = 0;
-    new PerformanceObserver((list) => {
-      const measured = list
-        .getEntries()
-        .reduce((total, entry) => total + Math.max(0, entry.duration - 50), 0);
-      (window as typeof window & { __crcLongTasks: number }).__crcLongTasks +=
-        measured;
-    }).observe({ type: "longtask", buffered: true });
+  browser,
+}, testInfo) => {
+  const baseURL = String(testInfo.project.use.baseURL);
+  const samples: Array<{
+    longTaskBlockingMs: number;
+    heroBytes: number;
+    heroPath: string;
+    loadedAuthChunk: boolean;
+  }> = [];
+
+  for (let sample = 0; sample < 7; sample += 1) {
+    const context = await browser.newContext({
+      baseURL,
+      viewport: { width: 390, height: 844 },
+    });
+    try {
+      const page = await context.newPage();
+      const session = await context.newCDPSession(page);
+      await session.send("Network.setCacheDisabled", { cacheDisabled: true });
+      await session.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+      await page.addInitScript(() => {
+        (window as typeof window & { __crcLongTasks: number }).__crcLongTasks =
+          0;
+        new PerformanceObserver((list) => {
+          const measured = list
+            .getEntries()
+            .reduce(
+              (total, entry) => total + Math.max(0, entry.duration - 50),
+              0,
+            );
+          (
+            window as typeof window & { __crcLongTasks: number }
+          ).__crcLongTasks += measured;
+        }).observe({ type: "longtask", buffered: true });
+      });
+      await page.goto("/", { waitUntil: "load" });
+      await page.waitForTimeout(250);
+      const hero = page.locator(".landing-hero img");
+      await expect(hero).toBeVisible();
+      samples.push(
+        await page.evaluate(() => {
+          const resources = performance.getEntriesByType(
+            "resource",
+          ) as PerformanceResourceTiming[];
+          const heroImage = document.querySelector<HTMLImageElement>(
+            ".landing-hero img",
+          )!;
+          return {
+            longTaskBlockingMs: (
+              window as typeof window & { __crcLongTasks: number }
+            ).__crcLongTasks,
+            heroBytes: resources
+              .filter((entry) =>
+                entry.name.endsWith("/assets/request-desk-480.avif"),
+              )
+              .reduce((total, entry) => total + entry.encodedBodySize, 0),
+            heroPath: new URL(heroImage.currentSrc).pathname,
+            loadedAuthChunk: resources.some((entry) =>
+              /\/auth-[^/]+\.js$/.test(new URL(entry.name).pathname),
+            ),
+          };
+        }),
+      );
+    } finally {
+      await context.close();
+    }
+  }
+
+  for (const sample of samples) {
+    expect(sample.heroPath).toBe("/assets/request-desk-480.avif");
+    expect(sample.heroBytes).toBeGreaterThan(0);
+    expect(sample.heroBytes).toBeLessThan(15_000);
+    expect(sample.loadedAuthChunk).toBe(false);
+  }
+  const sortedBlocking = samples
+    .map((sample) => sample.longTaskBlockingMs)
+    .sort((left, right) => left - right);
+  const medianBlockingMs = sortedBlocking[Math.floor(sortedBlocking.length / 2)];
+  testInfo.annotations.push({
+    type: "performance",
+    description: `4x CPU cold-sample blocking: ${sortedBlocking.map(Math.round).join(", ")} ms; median ${Math.round(medianBlockingMs)} ms`,
   });
-  await page.goto("/");
-  await page.waitForTimeout(250);
-  const hero = page.locator(".landing-hero img");
-  await expect(hero).toBeVisible();
-  expect(
-    await hero.evaluate(
-      (image: HTMLImageElement) => new URL(image.currentSrc).pathname,
-    ),
-  ).toBe("/assets/request-desk-480.avif");
-  const metrics = await page.evaluate(() => ({
-    longTaskBlockingMs: (window as typeof window & { __crcLongTasks: number })
-      .__crcLongTasks,
-    heroBytes: performance
-      .getEntriesByType("resource")
-      .filter((entry) => entry.name.endsWith("/assets/request-desk-480.avif"))
-      .reduce(
-        (total, entry) =>
-          total + (entry as PerformanceResourceTiming).encodedBodySize,
-        0,
-      ),
-    loadedAuthChunk: performance
-      .getEntriesByType("resource")
-      .some((entry) => /\/auth-[^/]+\.js$/.test(new URL(entry.name).pathname)),
-  }));
-  expect(metrics.heroBytes).toBeGreaterThan(0);
-  expect(metrics.heroBytes).toBeLessThan(15_000);
-  expect(metrics.longTaskBlockingMs).toBeLessThan(100);
-  expect(metrics.loadedAuthChunk).toBe(false);
+  expect(medianBlockingMs).toBeLessThan(100);
 });
 
 test("browser Back and Forward restore focus and announce the restored route heading", async ({

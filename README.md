@@ -4,7 +4,7 @@ Client Request Catalog helps small businesses share private prices and collect r
 
 Open `/?demo=1` to try a sample owner workspace. It starts with three offers, two private client links, and three requests. Demo changes stay in browser memory and never enter the real inbox.
 
-Open `/owner` to create the first owner workspace. Sociobot Microsoft Entra External ID is the only owner sign-in method. Owners can name the catalog, maintain offers, import CSV price sheets, and issue client links. They can review, update, export, or delete requests.
+Open `/owner` to create the first owner workspace. Sociobot Microsoft Entra External ID is the only owner sign-in method. Owners can name the catalog, maintain offers, import CSV price sheets, and issue client links. They can change each request status, export it, or delete it.
 
 The product is free to use and requires an internet connection to load. One catalog can contain fixed prices and offers that need a quote.
 
