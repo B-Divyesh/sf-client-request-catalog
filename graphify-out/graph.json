@@ -9,7 +9,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "authconfig",
       "source_file": "src/auth.ts",
@@ -21,7 +21,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "ownersession",
       "source_file": "src/auth.ts",
@@ -33,7 +33,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "catalog",
       "source_file": "src/main.ts",
@@ -45,7 +45,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "clientlink",
       "source_file": "src/main.ts",
@@ -57,7 +57,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "inboxrow",
       "source_file": "src/main.ts",
@@ -69,7 +69,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "item",
       "source_file": "src/main.ts",
@@ -81,7 +81,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "ownerdata",
       "source_file": "src/main.ts",
@@ -93,7 +93,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "product",
       "source_file": "src/main.ts",
@@ -105,7 +105,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "setupstatus",
       "source_file": "src/main.ts",
@@ -116,7 +116,7 @@
       "label": "accountLabel()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "accountlabel()",
       "source_file": "src/auth.ts",
@@ -127,7 +127,7 @@
       "label": "application()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "application()",
       "source_file": "src/auth.ts",
@@ -138,7 +138,7 @@
       "label": "config()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "config()",
       "source_file": "src/auth.ts",
@@ -149,7 +149,7 @@
       "label": "getOwnerSession()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "getownersession()",
       "source_file": "src/auth.ts",
@@ -160,7 +160,7 @@
       "label": "ready()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "ready()",
       "source_file": "src/auth.ts",
@@ -171,7 +171,7 @@
       "label": "signIn()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "signin()",
       "source_file": "src/auth.ts",
@@ -182,7 +182,7 @@
       "label": "signOut()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "signout()",
       "source_file": "src/auth.ts",
@@ -193,18 +193,18 @@
       "label": "addItem()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "additem()",
       "source_file": "src/main.ts",
-      "source_location": "L83"
+      "source_location": "L110"
     },
     {
       "id": "src_main_api",
       "label": "api()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "api()",
       "source_file": "src/main.ts",
@@ -215,84 +215,95 @@
       "label": "download()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "download()",
       "source_file": "src/main.ts",
-      "source_location": "L203"
+      "source_location": "L230"
     },
     {
       "id": "src_main_esc",
       "label": "esc()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "esc()",
       "source_file": "src/main.ts",
       "source_location": "L21"
     },
     {
+      "id": "src_main_focusandannouncerouteheading",
+      "label": "focusAndAnnounceRouteHeading()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "file_type": "code",
+      "norm_label": "focusandannouncerouteheading()",
+      "source_file": "src/main.ts",
+      "source_location": "L42"
+    },
+    {
       "id": "src_main_focusrouteheading",
       "label": "focusRouteHeading()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "focusrouteheading()",
       "source_file": "src/main.ts",
-      "source_location": "L42"
+      "source_location": "L54"
     },
     {
       "id": "src_main_itemcount",
       "label": "itemCount()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "itemcount()",
       "source_file": "src/main.ts",
-      "source_location": "L70"
+      "source_location": "L97"
     },
     {
       "id": "src_main_legal",
       "label": "legal()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "legal()",
       "source_file": "src/main.ts",
-      "source_location": "L296"
+      "source_location": "L323"
     },
     {
       "id": "src_main_loadcatalog",
       "label": "loadCatalog()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "loadcatalog()",
       "source_file": "src/main.ts",
-      "source_location": "L126"
+      "source_location": "L153"
     },
     {
       "id": "src_main_loadowner",
       "label": "loadOwner()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "loadowner()",
       "source_file": "src/main.ts",
-      "source_location": "L181"
+      "source_location": "L208"
     },
     {
       "id": "src_main_money",
       "label": "money()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "money()",
       "source_file": "src/main.ts",
@@ -303,51 +314,62 @@
       "label": "notFound()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "notfound()",
       "source_file": "src/main.ts",
-      "source_location": "L305"
+      "source_location": "L332"
     },
     {
       "id": "src_main_rendercatalog",
       "label": "renderCatalog()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "rendercatalog()",
       "source_file": "src/main.ts",
-      "source_location": "L71"
+      "source_location": "L98"
     },
     {
       "id": "src_main_renderlanding",
       "label": "renderLanding()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "renderlanding()",
       "source_file": "src/main.ts",
-      "source_location": "L64"
+      "source_location": "L91"
     },
     {
       "id": "src_main_renderowner",
       "label": "renderOwner()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "renderowner()",
       "source_file": "src/main.ts",
-      "source_location": "L214"
+      "source_location": "L241"
+    },
+    {
+      "id": "src_main_restoreroutefocus",
+      "label": "restoreRouteFocus()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "file_type": "code",
+      "norm_label": "restoreroutefocus()",
+      "source_file": "src/main.ts",
+      "source_location": "L60"
     },
     {
       "id": "src_main_setmeta",
       "label": "setMeta()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "setmeta()",
       "source_file": "src/main.ts",
@@ -358,55 +380,55 @@
       "label": "setupScreen()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "setupscreen()",
       "source_file": "src/main.ts",
-      "source_location": "L144"
+      "source_location": "L171"
     },
     {
       "id": "src_main_shell",
       "label": "shell()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "shell()",
       "source_file": "src/main.ts",
-      "source_location": "L55"
+      "source_location": "L82"
     },
     {
       "id": "src_main_signinscreen",
       "label": "signInScreen()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "signinscreen()",
       "source_file": "src/main.ts",
-      "source_location": "L161"
+      "source_location": "L188"
     },
     {
       "id": "src_main_submitrequest",
       "label": "submitRequest()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "submitrequest()",
       "source_file": "src/main.ts",
-      "source_location": "L97"
+      "source_location": "L124"
     },
     {
       "id": "src_main_wrongownerscreen",
       "label": "wrongOwnerScreen()",
       "_callable": true,
       "_origin": "ast",
-      "community": 2,
+      "community": 0,
       "file_type": "code",
       "norm_label": "wrongownerscreen()",
       "source_file": "src/main.ts",
-      "source_location": "L174"
+      "source_location": "L201"
     },
     {
       "id": "factory_qa_backend_temp_call",
@@ -486,474 +508,54 @@
       "source_location": "L6"
     },
     {
-      "id": "backend_src_main",
-      "label": "main.rs",
+      "id": "src_auth",
+      "label": "auth.ts",
       "_origin": "ast",
       "community": 0,
       "file_type": "code",
-      "norm_label": "main.rs",
-      "source_file": "backend/src/main.rs",
+      "norm_label": "auth.ts",
+      "source_file": "src/auth.ts",
       "source_location": "L1"
     },
     {
-      "id": "backend_src_main_app",
-      "label": "app()",
+      "id": "src_auth_scopes",
+      "label": "scopes",
       "_origin": "ast",
       "community": 0,
       "file_type": "code",
-      "norm_label": "app()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L433"
+      "norm_label": "scopes",
+      "source_file": "src/auth.ts",
+      "source_location": "L12"
     },
     {
-      "id": "backend_src_main_authorized_request",
-      "label": "authorized_request()",
+      "id": "src_main",
+      "label": "main.ts",
       "_origin": "ast",
       "community": 0,
       "file_type": "code",
-      "norm_label": "authorized_request()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1946"
+      "norm_label": "main.ts",
+      "source_file": "src/main.ts",
+      "source_location": "L1"
     },
     {
-      "id": "backend_src_main_authstate_for_test",
-      "label": ".for_test()",
+      "id": "src_main_app",
+      "label": "app",
       "_origin": "ast",
       "community": 0,
       "file_type": "code",
-      "norm_label": ".for_test()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L266"
+      "norm_label": "app",
+      "source_file": "src/main.ts",
+      "source_location": "L12"
     },
     {
-      "id": "backend_src_main_authstate_from_env",
-      "label": ".from_env()",
+      "id": "src_main_basket",
+      "label": "basket",
       "_origin": "ast",
       "community": 0,
       "file_type": "code",
-      "norm_label": ".from_env()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L237"
-    },
-    {
-      "id": "backend_src_main_client_links",
-      "label": "client_links()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "client_links()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1432"
-    },
-    {
-      "id": "backend_src_main_client_offer_assignments_keep_catalogs_and_request_validation_separate",
-      "label": "client_offer_assignments_keep_catalogs_and_request_validation_separate()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "client_offer_assignments_keep_catalogs_and_request_validation_separate()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L2344"
-    },
-    {
-      "id": "backend_src_main_configured_state",
-      "label": "configured_state()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "configured_state()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1882"
-    },
-    {
-      "id": "backend_src_main_creates_a_valid_pdf_header",
-      "label": "creates_a_valid_pdf_header()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "creates_a_valid_pdf_header()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1961"
-    },
-    {
-      "id": "backend_src_main_existing_database_serves_health_without_startup_writes",
-      "label": "existing_database_serves_health_without_startup_writes()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "existing_database_serves_health_without_startup_writes()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L2165"
-    },
-    {
-      "id": "backend_src_main_first_entra_owner_claim_brands_real_catalog_without_local_passwords",
-      "label": "first_entra_owner_claim_brands_real_catalog_without_local_passwords()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "first_entra_owner_claim_brands_real_catalog_without_local_passwords()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1984"
-    },
-    {
-      "id": "backend_src_main_forty_concurrent_valid_requests_are_all_saved_once",
-      "label": "forty_concurrent_valid_requests_are_all_saved_once()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "forty_concurrent_valid_requests_are_all_saved_once()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L2538"
-    },
-    {
-      "id": "backend_src_main_individual_request_export_and_deletion_keep_other_people_and_audit_safe",
-      "label": "individual_request_export_and_deletion_keep_other_people_and_audit_safe()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "individual_request_export_and_deletion_keep_other_people_and_audit_safe()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L2422"
-    },
-    {
-      "id": "backend_src_main_init_db",
-      "label": "init_db()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "init_db()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L557"
-    },
-    {
-      "id": "backend_src_main_legacy_public_token_is_revoked_without_duplicate_offers",
-      "label": "legacy_public_token_is_revoked_without_duplicate_offers()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "legacy_public_token_is_revoked_without_duplicate_offers()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L2187"
-    },
-    {
-      "id": "backend_src_main_load_owner_configuration",
-      "label": "load_owner_configuration()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "load_owner_configuration()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L621"
-    },
-    {
-      "id": "backend_src_main_main",
-      "label": "main()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "main()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L351"
-    },
-    {
-      "id": "backend_src_main_migrate_db",
-      "label": "migrate_db()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "migrate_db()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L582"
-    },
-    {
-      "id": "backend_src_main_migration_removes_local_password_ownership_but_keeps_catalog_branding",
-      "label": "migration_removes_local_password_ownership_but_keeps_catalog_branding()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "migration_removes_local_password_ownership_but_keeps_catalog_branding()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L2208"
-    },
-    {
-      "id": "backend_src_main_open_db",
-      "label": "open_db()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "open_db()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L537"
-    },
-    {
-      "id": "backend_src_main_random_token",
-      "label": "random_token()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "random_token()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1814"
-    },
-    {
-      "id": "backend_src_main_rate_limit_covers_api_and_404_routes_but_not_health",
-      "label": "rate_limit_covers_api_and_404_routes_but_not_health()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "rate_limit_covers_api_and_404_routes_but_not_health()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L2235"
-    },
-    {
-      "id": "backend_src_main_replace_client_offers",
-      "label": "replace_client_offers()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "replace_client_offers()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1406"
-    },
-    {
-      "id": "backend_src_main_request",
-      "label": "request()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "request()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1939"
-    },
-    {
-      "id": "backend_src_main_request_rows",
-      "label": "request_rows()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "request_rows()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1453"
-    },
-    {
-      "id": "backend_src_main_seed_test_catalog",
-      "label": "seed_test_catalog()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "seed_test_catalog()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1894"
-    },
-    {
-      "id": "backend_src_main_shutdown",
-      "label": "shutdown()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "shutdown()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L510"
-    },
-    {
-      "id": "backend_src_main_shutdownsignal",
-      "label": "ShutdownSignal",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "shutdownsignal",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L487"
-    },
-    {
-      "id": "backend_src_main_sigterm_resolves_the_graceful_shutdown_future",
-      "label": "sigterm_resolves_the_graceful_shutdown_future()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "sigterm_resolves_the_graceful_shutdown_future()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1967"
-    },
-    {
-      "id": "backend_src_main_test_state",
-      "label": "test_state()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "test_state()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1915"
-    },
-    {
-      "id": "backend_src_main_unclaimed_state",
-      "label": "unclaimed_state()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "unclaimed_state()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1923"
-    },
-    {
-      "id": "backend_src_main_validated_offer_ids",
-      "label": "validated_offer_ids()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "validated_offer_ids()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1385"
-    },
-    {
-      "id": "backend_src_main_validates_normal_email",
-      "label": "validates_normal_email()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "validates_normal_email()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1955"
-    },
-    {
-      "id": "backend_src_main_visible_offer_ids",
-      "label": "visible_offer_ids()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "visible_offer_ids()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1379"
-    },
-    {
-      "id": "backend_src_main_wait_for_shutdown",
-      "label": "wait_for_shutdown()",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "wait_for_shutdown()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L495"
-    },
-    {
-      "id": "body",
-      "label": "Body",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "body",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "error",
-      "label": "Error",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "error",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "interrupt",
-      "label": "Interrupt",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "interrupt",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "pathbuf",
-      "label": "PathBuf",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "pathbuf",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "result",
-      "label": "Result",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "result",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "router",
-      "label": "Router",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "router",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "self",
-      "label": "Self",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "self",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "sqlite",
-      "label": "Sqlite",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "sqlite",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "sqlitepool",
-      "label": "SqlitePool",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "sqlitepool",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "tempdir",
-      "label": "TempDir",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "tempdir",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "terminate",
-      "label": "Terminate",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "terminate",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "transaction",
-      "label": "Transaction",
-      "_origin": "ast",
-      "community": 0,
-      "file_type": "code",
-      "norm_label": "transaction",
-      "source_file": "",
-      "source_location": ""
+      "norm_label": "basket",
+      "source_file": "src/main.ts",
+      "source_location": "L16"
     },
     {
       "id": "backend_src_main_appstate",
@@ -1026,16 +628,6 @@
       "source_location": "L818"
     },
     {
-      "id": "backend_src_main_business_name",
-      "label": "business_name()",
-      "_origin": "ast",
-      "community": 1,
-      "file_type": "code",
-      "norm_label": "business_name()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L919"
-    },
-    {
       "id": "backend_src_main_claim_workspace",
       "label": "claim_workspace()",
       "_origin": "ast",
@@ -1054,6 +646,16 @@
       "norm_label": "create_client()",
       "source_file": "backend/src/main.rs",
       "source_location": "L1246"
+    },
+    {
+      "id": "backend_src_main_create_demo_request",
+      "label": "create_demo_request()",
+      "_origin": "ast",
+      "community": 1,
+      "file_type": "code",
+      "norm_label": "create_demo_request()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1004"
     },
     {
       "id": "backend_src_main_create_product",
@@ -1196,16 +798,6 @@
       "source_location": "L718"
     },
     {
-      "id": "backend_src_main_overview",
-      "label": "Overview",
-      "_origin": "ast",
-      "community": 1,
-      "file_type": "code",
-      "norm_label": "overview",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L214"
-    },
-    {
       "id": "backend_src_main_rate_limit",
       "label": "rate_limit()",
       "_origin": "ast",
@@ -1264,6 +856,16 @@
       "norm_label": "update_status()",
       "source_file": "backend/src/main.rs",
       "source_location": "L1539"
+    },
+    {
+      "id": "backend_src_main_validate_request",
+      "label": "validate_request()",
+      "_origin": "ast",
+      "community": 1,
+      "file_type": "code",
+      "norm_label": "validate_request()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1130"
     },
     {
       "id": "backend_src_main_with_security_headers",
@@ -1366,10 +968,40 @@
       "source_location": ""
     },
     {
+      "id": "backend_src_main_replace_client_offers",
+      "label": "replace_client_offers()",
+      "_origin": "ast",
+      "community": 10,
+      "file_type": "code",
+      "norm_label": "replace_client_offers()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1406"
+    },
+    {
+      "id": "sqlite",
+      "label": "Sqlite",
+      "_origin": "ast",
+      "community": 10,
+      "file_type": "code",
+      "norm_label": "sqlite",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "transaction",
+      "label": "Transaction",
+      "_origin": "ast",
+      "community": 10,
+      "file_type": "code",
+      "norm_label": "transaction",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "eslint_config",
       "label": "eslint.config.mjs",
       "_origin": "ast",
-      "community": 10,
+      "community": 11,
       "file_type": "code",
       "norm_label": "eslint.config.mjs",
       "source_file": "eslint.config.mjs",
@@ -1379,7 +1011,7 @@
       "id": "pkg_client_request_catalog_server",
       "label": "client-request-catalog-server",
       "_origin": "ast",
-      "community": 11,
+      "community": 12,
       "ecosystem": "cargo",
       "file_type": "code",
       "norm_label": "client-request-catalog-server",
@@ -1392,7 +1024,7 @@
       "id": "playwright_config",
       "label": "playwright.config.ts",
       "_origin": "ast",
-      "community": 12,
+      "community": 13,
       "file_type": "code",
       "norm_label": "playwright.config.ts",
       "source_file": "playwright.config.ts",
@@ -1402,7 +1034,7 @@
       "id": "tests_client_test",
       "label": "client.test.mjs",
       "_origin": "ast",
-      "community": 13,
+      "community": 14,
       "file_type": "code",
       "norm_label": "client.test.mjs",
       "source_file": "tests/client.test.mjs",
@@ -1412,67 +1044,17 @@
       "id": "vite_config",
       "label": "vite.config.ts",
       "_origin": "ast",
-      "community": 14,
+      "community": 15,
       "file_type": "code",
       "norm_label": "vite.config.ts",
       "source_file": "vite.config.ts",
       "source_location": "L1"
     },
     {
-      "id": "src_auth",
-      "label": "auth.ts",
-      "_origin": "ast",
-      "community": 2,
-      "file_type": "code",
-      "norm_label": "auth.ts",
-      "source_file": "src/auth.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_auth_scopes",
-      "label": "scopes",
-      "_origin": "ast",
-      "community": 2,
-      "file_type": "code",
-      "norm_label": "scopes",
-      "source_file": "src/auth.ts",
-      "source_location": "L12"
-    },
-    {
-      "id": "src_main",
-      "label": "main.ts",
-      "_origin": "ast",
-      "community": 2,
-      "file_type": "code",
-      "norm_label": "main.ts",
-      "source_file": "src/main.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_main_app",
-      "label": "app",
-      "_origin": "ast",
-      "community": 2,
-      "file_type": "code",
-      "norm_label": "app",
-      "source_file": "src/main.ts",
-      "source_location": "L12"
-    },
-    {
-      "id": "src_main_basket",
-      "label": "basket",
-      "_origin": "ast",
-      "community": 2,
-      "file_type": "code",
-      "norm_label": "basket",
-      "source_file": "src/main.ts",
-      "source_location": "L16"
-    },
-    {
       "id": "arc",
       "label": "Arc",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "arc",
       "source_file": "",
@@ -1482,7 +1064,7 @@
       "id": "backend_src_main_authconfigresponse",
       "label": "AuthConfigResponse",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "authconfigresponse",
       "source_file": "backend/src/main.rs",
@@ -1492,7 +1074,7 @@
       "id": "backend_src_main_authstate",
       "label": "AuthState",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "authstate",
       "source_file": "backend/src/main.rs",
@@ -1502,7 +1084,7 @@
       "id": "backend_src_main_authstate_authority",
       "label": ".authority()",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": ".authority()",
       "source_file": "backend/src/main.rs",
@@ -1512,7 +1094,7 @@
       "id": "backend_src_main_authstate_discovery_url",
       "label": ".discovery_url()",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": ".discovery_url()",
       "source_file": "backend/src/main.rs",
@@ -1522,27 +1104,47 @@
       "id": "backend_src_main_authstate_refresh",
       "label": ".refresh()",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": ".refresh()",
       "source_file": "backend/src/main.rs",
       "source_location": "L291"
     },
     {
+      "id": "backend_src_main_business_name",
+      "label": "business_name()",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "business_name()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L919"
+    },
+    {
       "id": "backend_src_main_catalog",
       "label": "Catalog",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "catalog",
       "source_file": "backend/src/main.rs",
       "source_location": "L145"
     },
     {
+      "id": "backend_src_main_client_links",
+      "label": "client_links()",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "client_links()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1432"
+    },
+    {
       "id": "backend_src_main_clientinput",
       "label": "ClientInput",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "clientinput",
       "source_file": "backend/src/main.rs",
@@ -1552,7 +1154,7 @@
       "id": "backend_src_main_clientlink",
       "label": "ClientLink",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "clientlink",
       "source_file": "backend/src/main.rs",
@@ -1562,27 +1164,17 @@
       "id": "backend_src_main_clientlinkrow",
       "label": "ClientLinkRow",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "clientlinkrow",
       "source_file": "backend/src/main.rs",
       "source_location": "L170"
     },
     {
-      "id": "backend_src_main_create_demo_request",
-      "label": "create_demo_request()",
-      "_origin": "ast",
-      "community": 3,
-      "file_type": "code",
-      "norm_label": "create_demo_request()",
-      "source_file": "backend/src/main.rs",
-      "source_location": "L1004"
-    },
-    {
       "id": "backend_src_main_deletionauditrow",
       "label": "DeletionAuditRow",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "deletionauditrow",
       "source_file": "backend/src/main.rs",
@@ -1592,7 +1184,7 @@
       "id": "backend_src_main_demo_catalog",
       "label": "demo_catalog()",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "demo_catalog()",
       "source_file": "backend/src/main.rs",
@@ -1602,7 +1194,7 @@
       "id": "backend_src_main_entraclaims",
       "label": "EntraClaims",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "entraclaims",
       "source_file": "backend/src/main.rs",
@@ -1612,7 +1204,7 @@
       "id": "backend_src_main_inboxrow",
       "label": "InboxRow",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "inboxrow",
       "source_file": "backend/src/main.rs",
@@ -1622,7 +1214,7 @@
       "id": "backend_src_main_jwkdocument",
       "label": "JwkDocument",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "jwkdocument",
       "source_file": "backend/src/main.rs",
@@ -1632,17 +1224,27 @@
       "id": "backend_src_main_jwksdocument",
       "label": "JwksDocument",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "jwksdocument",
       "source_file": "backend/src/main.rs",
       "source_location": "L76"
     },
     {
+      "id": "backend_src_main_load_owner_configuration",
+      "label": "load_owner_configuration()",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "load_owner_configuration()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L621"
+    },
+    {
       "id": "backend_src_main_offerassignmentinput",
       "label": "OfferAssignmentInput",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "offerassignmentinput",
       "source_file": "backend/src/main.rs",
@@ -1652,17 +1254,27 @@
       "id": "backend_src_main_oidcdiscovery",
       "label": "OidcDiscovery",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "oidcdiscovery",
       "source_file": "backend/src/main.rs",
       "source_location": "L70"
     },
     {
+      "id": "backend_src_main_overview",
+      "label": "Overview",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "overview",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L214"
+    },
+    {
       "id": "backend_src_main_product",
       "label": "Product",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "product",
       "source_file": "backend/src/main.rs",
@@ -1672,17 +1284,27 @@
       "id": "backend_src_main_productinput",
       "label": "ProductInput",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "productinput",
       "source_file": "backend/src/main.rs",
       "source_location": "L192"
     },
     {
+      "id": "backend_src_main_request_rows",
+      "label": "request_rows()",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "request_rows()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1453"
+    },
+    {
       "id": "backend_src_main_requestinput",
       "label": "RequestInput",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "requestinput",
       "source_file": "backend/src/main.rs",
@@ -1692,7 +1314,7 @@
       "id": "backend_src_main_requestitem",
       "label": "RequestItem",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "requestitem",
       "source_file": "backend/src/main.rs",
@@ -1702,7 +1324,7 @@
       "id": "backend_src_main_settingsinput",
       "label": "SettingsInput",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "settingsinput",
       "source_file": "backend/src/main.rs",
@@ -1712,7 +1334,7 @@
       "id": "backend_src_main_setupinput",
       "label": "SetupInput",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "setupinput",
       "source_file": "backend/src/main.rs",
@@ -1722,7 +1344,7 @@
       "id": "backend_src_main_simple_pdf",
       "label": "simple_pdf()",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "simple_pdf()",
       "source_file": "backend/src/main.rs",
@@ -1732,7 +1354,7 @@
       "id": "backend_src_main_statusinput",
       "label": "StatusInput",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "statusinput",
       "source_file": "backend/src/main.rs",
@@ -1742,11 +1364,361 @@
       "id": "backend_src_main_testidentity",
       "label": "TestIdentity",
       "_origin": "ast",
-      "community": 3,
+      "community": 2,
       "file_type": "code",
       "norm_label": "testidentity",
       "source_file": "backend/src/main.rs",
       "source_location": "L64"
+    },
+    {
+      "id": "backend_src_main_validated_offer_ids",
+      "label": "validated_offer_ids()",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "validated_offer_ids()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1385"
+    },
+    {
+      "id": "client",
+      "label": "Client",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "client",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "error",
+      "label": "Error",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "error",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "mutex",
+      "label": "Mutex",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "mutex",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "option",
+      "label": "Option",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "option",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "result",
+      "label": "Result",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "result",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "string",
+      "label": "String",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "string",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "vec",
+      "label": "Vec",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "vec",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "backend_src_main",
+      "label": "main.rs",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "main.rs",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1"
+    },
+    {
+      "id": "backend_src_main_app",
+      "label": "app()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "app()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L433"
+    },
+    {
+      "id": "backend_src_main_authorized_request",
+      "label": "authorized_request()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "authorized_request()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1946"
+    },
+    {
+      "id": "backend_src_main_authstate_for_test",
+      "label": ".for_test()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": ".for_test()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L266"
+    },
+    {
+      "id": "backend_src_main_authstate_from_env",
+      "label": ".from_env()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": ".from_env()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L237"
+    },
+    {
+      "id": "backend_src_main_client_offer_assignments_keep_catalogs_and_request_validation_separate",
+      "label": "client_offer_assignments_keep_catalogs_and_request_validation_separate()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "client_offer_assignments_keep_catalogs_and_request_validation_separate()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L2344"
+    },
+    {
+      "id": "backend_src_main_configured_state",
+      "label": "configured_state()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "configured_state()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1882"
+    },
+    {
+      "id": "backend_src_main_creates_a_valid_pdf_header",
+      "label": "creates_a_valid_pdf_header()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "creates_a_valid_pdf_header()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1961"
+    },
+    {
+      "id": "backend_src_main_existing_database_serves_health_without_startup_writes",
+      "label": "existing_database_serves_health_without_startup_writes()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "existing_database_serves_health_without_startup_writes()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L2165"
+    },
+    {
+      "id": "backend_src_main_first_entra_owner_claim_brands_real_catalog_without_local_passwords",
+      "label": "first_entra_owner_claim_brands_real_catalog_without_local_passwords()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "first_entra_owner_claim_brands_real_catalog_without_local_passwords()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1984"
+    },
+    {
+      "id": "backend_src_main_forty_concurrent_valid_requests_are_all_saved_once",
+      "label": "forty_concurrent_valid_requests_are_all_saved_once()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "forty_concurrent_valid_requests_are_all_saved_once()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L2538"
+    },
+    {
+      "id": "backend_src_main_individual_request_export_and_deletion_keep_other_people_and_audit_safe",
+      "label": "individual_request_export_and_deletion_keep_other_people_and_audit_safe()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "individual_request_export_and_deletion_keep_other_people_and_audit_safe()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L2422"
+    },
+    {
+      "id": "backend_src_main_init_db",
+      "label": "init_db()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "init_db()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L557"
+    },
+    {
+      "id": "backend_src_main_legacy_public_token_is_revoked_without_duplicate_offers",
+      "label": "legacy_public_token_is_revoked_without_duplicate_offers()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "legacy_public_token_is_revoked_without_duplicate_offers()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L2187"
+    },
+    {
+      "id": "backend_src_main_main",
+      "label": "main()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "main()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L351"
+    },
+    {
+      "id": "backend_src_main_migrate_db",
+      "label": "migrate_db()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "migrate_db()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L582"
+    },
+    {
+      "id": "backend_src_main_migration_removes_local_password_ownership_but_keeps_catalog_branding",
+      "label": "migration_removes_local_password_ownership_but_keeps_catalog_branding()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "migration_removes_local_password_ownership_but_keeps_catalog_branding()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L2208"
+    },
+    {
+      "id": "backend_src_main_open_db",
+      "label": "open_db()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "open_db()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L537"
+    },
+    {
+      "id": "backend_src_main_random_token",
+      "label": "random_token()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "random_token()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1814"
+    },
+    {
+      "id": "backend_src_main_rate_limit_covers_api_and_404_routes_but_not_health",
+      "label": "rate_limit_covers_api_and_404_routes_but_not_health()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "rate_limit_covers_api_and_404_routes_but_not_health()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L2235"
+    },
+    {
+      "id": "backend_src_main_request",
+      "label": "request()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "request()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1939"
+    },
+    {
+      "id": "backend_src_main_seed_test_catalog",
+      "label": "seed_test_catalog()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "seed_test_catalog()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1894"
+    },
+    {
+      "id": "backend_src_main_shutdown",
+      "label": "shutdown()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "shutdown()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L510"
+    },
+    {
+      "id": "backend_src_main_shutdownsignal",
+      "label": "ShutdownSignal",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "shutdownsignal",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L487"
+    },
+    {
+      "id": "backend_src_main_sigterm_resolves_the_graceful_shutdown_future",
+      "label": "sigterm_resolves_the_graceful_shutdown_future()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "sigterm_resolves_the_graceful_shutdown_future()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1967"
+    },
+    {
+      "id": "backend_src_main_test_state",
+      "label": "test_state()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "test_state()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1915"
+    },
+    {
+      "id": "backend_src_main_unclaimed_state",
+      "label": "unclaimed_state()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "unclaimed_state()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1923"
     },
     {
       "id": "backend_src_main_valid_email",
@@ -1759,62 +1731,112 @@
       "source_location": "L1810"
     },
     {
-      "id": "backend_src_main_validate_request",
-      "label": "validate_request()",
+      "id": "backend_src_main_validates_normal_email",
+      "label": "validates_normal_email()",
       "_origin": "ast",
       "community": 3,
       "file_type": "code",
-      "norm_label": "validate_request()",
+      "norm_label": "validates_normal_email()",
       "source_file": "backend/src/main.rs",
-      "source_location": "L1130"
+      "source_location": "L1955"
     },
     {
-      "id": "client",
-      "label": "Client",
+      "id": "backend_src_main_visible_offer_ids",
+      "label": "visible_offer_ids()",
       "_origin": "ast",
       "community": 3,
       "file_type": "code",
-      "norm_label": "client",
+      "norm_label": "visible_offer_ids()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L1379"
+    },
+    {
+      "id": "backend_src_main_wait_for_shutdown",
+      "label": "wait_for_shutdown()",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "wait_for_shutdown()",
+      "source_file": "backend/src/main.rs",
+      "source_location": "L495"
+    },
+    {
+      "id": "body",
+      "label": "Body",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "body",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "mutex",
-      "label": "Mutex",
+      "id": "interrupt",
+      "label": "Interrupt",
       "_origin": "ast",
       "community": 3,
       "file_type": "code",
-      "norm_label": "mutex",
+      "norm_label": "interrupt",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "option",
-      "label": "Option",
+      "id": "pathbuf",
+      "label": "PathBuf",
       "_origin": "ast",
       "community": 3,
       "file_type": "code",
-      "norm_label": "option",
+      "norm_label": "pathbuf",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "string",
-      "label": "String",
+      "id": "router",
+      "label": "Router",
       "_origin": "ast",
       "community": 3,
       "file_type": "code",
-      "norm_label": "string",
+      "norm_label": "router",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "vec",
-      "label": "Vec",
+      "id": "self",
+      "label": "Self",
       "_origin": "ast",
       "community": 3,
       "file_type": "code",
-      "norm_label": "vec",
+      "norm_label": "self",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sqlitepool",
+      "label": "SqlitePool",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "sqlitepool",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "tempdir",
+      "label": "TempDir",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "tempdir",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "terminate",
+      "label": "Terminate",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "terminate",
       "source_file": "",
       "source_location": ""
     },
@@ -4347,7 +4369,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L86",
+      "source_location": "L113",
       "weight": 1.0
     },
     {
@@ -4359,7 +4381,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L301",
+      "source_location": "L328",
       "weight": 1.0
     },
     {
@@ -4371,7 +4393,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L128",
+      "source_location": "L155",
       "weight": 1.0
     },
     {
@@ -4383,7 +4405,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L132",
+      "source_location": "L159",
       "weight": 1.0
     },
     {
@@ -4395,7 +4417,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L135",
+      "source_location": "L162",
       "weight": 1.0
     },
     {
@@ -4407,7 +4429,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L137",
+      "source_location": "L164",
       "weight": 1.0
     },
     {
@@ -4419,7 +4441,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L182",
+      "source_location": "L209",
       "weight": 1.0
     },
     {
@@ -4431,7 +4453,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L185",
+      "source_location": "L212",
       "weight": 1.0
     },
     {
@@ -4443,7 +4465,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L188",
+      "source_location": "L215",
       "weight": 1.0
     },
     {
@@ -4455,7 +4477,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L191",
+      "source_location": "L218",
       "weight": 1.0
     },
     {
@@ -4467,7 +4489,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L192",
+      "source_location": "L219",
       "weight": 1.0
     },
     {
@@ -4479,7 +4501,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L196",
+      "source_location": "L223",
       "weight": 1.0
     },
     {
@@ -4491,7 +4513,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L305",
+      "source_location": "L332",
       "weight": 1.0
     },
     {
@@ -4503,7 +4525,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L73",
+      "source_location": "L100",
       "weight": 1.0
     },
     {
@@ -4515,7 +4537,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L73",
+      "source_location": "L100",
       "weight": 1.0
     },
     {
@@ -4527,7 +4549,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L75",
+      "source_location": "L102",
       "weight": 1.0
     },
     {
@@ -4539,7 +4561,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L75",
+      "source_location": "L102",
       "weight": 1.0
     },
     {
@@ -4551,7 +4573,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L78",
+      "source_location": "L105",
       "weight": 1.0
     },
     {
@@ -4563,7 +4585,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L65",
+      "source_location": "L92",
       "weight": 1.0
     },
     {
@@ -4575,7 +4597,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L216",
+      "source_location": "L243",
       "weight": 1.0
     },
     {
@@ -4587,7 +4609,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L224",
+      "source_location": "L251",
       "weight": 1.0
     },
     {
@@ -4599,7 +4621,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L230",
+      "source_location": "L257",
       "weight": 1.0
     },
     {
@@ -4611,7 +4633,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L231",
+      "source_location": "L258",
       "weight": 1.0
     },
     {
@@ -4623,7 +4645,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L145",
+      "source_location": "L172",
       "weight": 1.0
     },
     {
@@ -4635,7 +4657,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L145",
+      "source_location": "L172",
       "weight": 1.0
     },
     {
@@ -4647,7 +4669,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L154",
+      "source_location": "L181",
       "weight": 1.0
     },
     {
@@ -4659,19 +4681,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L56",
-      "weight": 1.0
-    },
-    {
-      "source": "src_main_shell",
-      "target": "src_main_esc",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/main.ts",
-      "source_location": "L60",
+      "source_location": "L83",
       "weight": 1.0
     },
     {
@@ -4683,7 +4693,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L61",
+      "source_location": "L88",
       "weight": 1.0
     },
     {
@@ -4695,7 +4705,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L162",
+      "source_location": "L189",
       "weight": 1.0
     },
     {
@@ -4707,7 +4717,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L162",
+      "source_location": "L189",
       "weight": 1.0
     },
     {
@@ -4719,7 +4729,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L111",
+      "source_location": "L138",
       "weight": 1.0
     },
     {
@@ -4731,7 +4741,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/main.ts",
-      "source_location": "L175",
+      "source_location": "L202",
       "weight": 1.0
     },
     {
@@ -6136,7 +6146,7 @@
       "context": "import",
       "deferred": true,
       "source_file": "src/main.ts",
-      "source_location": "L184",
+      "source_location": "L211",
       "weight": 1.0
     },
     {
@@ -6149,7 +6159,7 @@
       "context": "import",
       "deferred": true,
       "source_file": "src/main.ts",
-      "source_location": "L234",
+      "source_location": "L261",
       "weight": 1.0
     },
     {
@@ -6162,7 +6172,7 @@
       "context": "import",
       "deferred": true,
       "source_file": "src/main.ts",
-      "source_location": "L169",
+      "source_location": "L196",
       "weight": 1.0
     },
     {
@@ -6175,7 +6185,7 @@
       "context": "import",
       "deferred": true,
       "source_file": "src/main.ts",
-      "source_location": "L178",
+      "source_location": "L205",
       "weight": 1.0
     },
     {
@@ -9391,6 +9401,17 @@
     },
     {
       "source": "src_main",
+      "target": "src_main_additem",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/main.ts",
+      "source_location": "L110",
+      "weight": 1.0
+    },
+    {
+      "source": "src_main",
       "target": "src_main_app",
       "relation": "contains",
       "_origin": "ast",
@@ -9402,24 +9423,24 @@
     },
     {
       "source": "src_main",
+      "target": "src_main_submitrequest",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/main.ts",
+      "source_location": "L124",
+      "weight": 1.0
+    },
+    {
+      "source": "src_main",
       "target": "src_main_loadcatalog",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/main.ts",
-      "source_location": "L126",
-      "weight": 1.0
-    },
-    {
-      "source": "src_main",
-      "target": "src_main_setupscreen",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/main.ts",
-      "source_location": "L144",
+      "source_location": "L153",
       "weight": 1.0
     },
     {
@@ -9435,13 +9456,24 @@
     },
     {
       "source": "src_main",
+      "target": "src_main_setupscreen",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/main.ts",
+      "source_location": "L171",
+      "weight": 1.0
+    },
+    {
+      "source": "src_main",
       "target": "src_main_signinscreen",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/main.ts",
-      "source_location": "L161",
+      "source_location": "L188",
       "weight": 1.0
     },
     {
@@ -9452,7 +9484,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/main.ts",
-      "source_location": "L174",
+      "source_location": "L201",
       "weight": 1.0
     },
     {
@@ -9463,18 +9495,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/main.ts",
-      "source_location": "L181",
-      "weight": 1.0
-    },
-    {
-      "source": "src_main",
-      "target": "src_main_download",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/main.ts",
-      "source_location": "L203",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -9486,17 +9507,6 @@
       "confidence_score": 1.0,
       "source_file": "src/main.ts",
       "source_location": "L21",
-      "weight": 1.0
-    },
-    {
-      "source": "src_main",
-      "target": "src_main_renderowner",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/main.ts",
-      "source_location": "L214",
       "weight": 1.0
     },
     {
@@ -9523,6 +9533,28 @@
     },
     {
       "source": "src_main",
+      "target": "src_main_download",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/main.ts",
+      "source_location": "L230",
+      "weight": 1.0
+    },
+    {
+      "source": "src_main",
+      "target": "src_main_renderowner",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/main.ts",
+      "source_location": "L241",
+      "weight": 1.0
+    },
+    {
+      "source": "src_main",
       "target": "src_main_setmeta",
       "relation": "contains",
       "_origin": "ast",
@@ -9530,17 +9562,6 @@
       "confidence_score": 1.0,
       "source_file": "src/main.ts",
       "source_location": "L25",
-      "weight": 1.0
-    },
-    {
-      "source": "src_main",
-      "target": "src_main_legal",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/main.ts",
-      "source_location": "L296",
       "weight": 1.0
     },
     {
@@ -9556,13 +9577,24 @@
     },
     {
       "source": "src_main",
+      "target": "src_main_legal",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/main.ts",
+      "source_location": "L323",
+      "weight": 1.0
+    },
+    {
+      "source": "src_main",
       "target": "src_main_notfound",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/main.ts",
-      "source_location": "L305",
+      "source_location": "L332",
       "weight": 1.0
     },
     {
@@ -9578,7 +9610,7 @@
     },
     {
       "source": "src_main",
-      "target": "src_main_focusrouteheading",
+      "target": "src_main_focusandannouncerouteheading",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -9600,13 +9632,13 @@
     },
     {
       "source": "src_main",
-      "target": "src_main_shell",
+      "target": "src_main_focusrouteheading",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/main.ts",
-      "source_location": "L55",
+      "source_location": "L54",
       "weight": 1.0
     },
     {
@@ -9622,13 +9654,13 @@
     },
     {
       "source": "src_main",
-      "target": "src_main_renderlanding",
+      "target": "src_main_restoreroutefocus",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/main.ts",
-      "source_location": "L64",
+      "source_location": "L60",
       "weight": 1.0
     },
     {
@@ -9644,28 +9676,6 @@
     },
     {
       "source": "src_main",
-      "target": "src_main_itemcount",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/main.ts",
-      "source_location": "L70",
-      "weight": 1.0
-    },
-    {
-      "source": "src_main",
-      "target": "src_main_rendercatalog",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/main.ts",
-      "source_location": "L71",
-      "weight": 1.0
-    },
-    {
-      "source": "src_main",
       "target": "src_main_ownerdata",
       "relation": "contains",
       "_origin": "ast",
@@ -9677,13 +9687,13 @@
     },
     {
       "source": "src_main",
-      "target": "src_main_additem",
+      "target": "src_main_shell",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/main.ts",
-      "source_location": "L83",
+      "source_location": "L82",
       "weight": 1.0
     },
     {
@@ -9699,13 +9709,35 @@
     },
     {
       "source": "src_main",
-      "target": "src_main_submitrequest",
+      "target": "src_main_renderlanding",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/main.ts",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "src_main",
+      "target": "src_main_itemcount",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/main.ts",
       "source_location": "L97",
+      "weight": 1.0
+    },
+    {
+      "source": "src_main",
+      "target": "src_main_rendercatalog",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/main.ts",
+      "source_location": "L98",
       "weight": 1.0
     },
     {
@@ -9938,6 +9970,18 @@
       "weight": 1.0
     },
     {
+      "source": "src_main_focusrouteheading",
+      "target": "src_main_focusandannouncerouteheading",
+      "relation": "indirect_call",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "argument",
+      "source_file": "src/main.ts",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
       "source": "src_main_rendercatalog",
       "target": "src_main_submitrequest",
       "relation": "indirect_call",
@@ -9946,10 +9990,22 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "src/main.ts",
-      "source_location": "L79",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "src_main_restoreroutefocus",
+      "target": "src_main_focusandannouncerouteheading",
+      "relation": "indirect_call",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "argument",
+      "source_file": "src/main.ts",
+      "source_location": "L62",
       "weight": 1.0
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "99f5cbb90f4d7ea8662f4ebf15dbda177a6a2464"
+  "built_at_commit": "0f5e9d9e2e59d5eef718975698d8c6845509f686"
 }
