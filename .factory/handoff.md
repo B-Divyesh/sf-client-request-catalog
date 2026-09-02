@@ -37,7 +37,21 @@ Every exact command in `.factory/claims.json` was also run independently from cl
 - Container app scope: `sf-client-request-catalog`
 - Durable data path: `/data`, one replica through the fleet deployment script.
 
-The final source commit, deployed `/health` build SHA, live URL verifier results, and Lighthouse measurements are appended after deployment.
+Deployed source commit: `1a41926ee47fb5abfa8af539b209757bd850650c`.
+
+Post-deploy evidence:
+
+- `/health` returns the same full build SHA and `ok: true`.
+- Cold URL verification passed on `/` and `/?demo=1`; both had zero console errors.
+- A cold live click opened three offers, two client links, and three requests.
+- Live demo edit, reset, client switching, mixed-price request, and inbox return all passed.
+- Live axe scans found zero serious or critical issues on home, demo, owner, privacy, terms, and 404.
+- Every named route and metadata asset returned 200. An unknown route returned the designed HTTP 404.
+- Every route title is at most 60 characters. Each `og:url` matches its route canonical.
+- Mobile facts remain above the 844 px fold with no horizontal overflow.
+- The complete live sample flow contacted only `https://client-request-catalog.sociobot.in`.
+- A 45-request live burst returned 41 successful responses and four 429 responses. Every 429 sent `Retry-After: 1`.
+- Mobile Lighthouse: Performance 100, Accessibility 100, Best Practices 100, SEO 100, LCP 1,352 ms, TBT 0 ms, CLS 0.
 
 ## Known gaps
 
