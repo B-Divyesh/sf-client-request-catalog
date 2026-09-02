@@ -90,7 +90,6 @@
       "src_main",
       "src_main_additem",
       "src_main_api",
-      "src_main_app",
       "src_main_basket",
       "src_main_catalog",
       "src_main_clientlink",
@@ -98,9 +97,6 @@
       "src_main_demodata",
       "src_main_download",
       "src_main_downloadblob",
-      "src_main_esc",
-      "src_main_focusandannouncerouteheading",
-      "src_main_focusrouteheading",
       "src_main_freshdemodata",
       "src_main_importrow",
       "src_main_inboxrow",
@@ -122,16 +118,20 @@
       "src_main_renderlanding",
       "src_main_renderowner",
       "src_main_requestpdf",
-      "src_main_restoreroutefocus",
-      "src_main_setmeta",
       "src_main_setupscreen",
       "src_main_setupstatus",
-      "src_main_shell",
       "src_main_signinscreen",
       "src_main_simplepdf",
       "src_main_splitcsvline",
       "src_main_submitrequest",
-      "src_main_wrongownerscreen"
+      "src_main_wrongownerscreen",
+      "src_shell",
+      "src_shell_esc",
+      "src_shell_focusandannouncerouteheading",
+      "src_shell_focusrouteheading",
+      "src_shell_restoreroutefocus",
+      "src_shell_setmeta",
+      "src_shell_shell"
     ],
     "2": [
       "backend_src_main_appstate",
@@ -339,7 +339,7 @@
   },
   "cohesion": {
     "0": 0.076103500761035,
-    "1": 0.07272727272727272,
+    "1": 0.07402597402597402,
     "2": 0.22591362126245848,
     "3": 0.05405405405405406,
     "4": 0.09523809523809523,
@@ -380,11 +380,6 @@
       "degree": 16
     },
     {
-      "id": "src_main_renderowner",
-      "label": "renderOwner()",
-      "degree": 14
-    },
-    {
       "id": "backend_src_main_test_state",
       "label": "test_state()",
       "degree": 14
@@ -400,9 +395,14 @@
       "degree": 14
     },
     {
-      "id": "src_main_shell",
+      "id": "src_main_renderowner",
+      "label": "renderOwner()",
+      "degree": 14
+    },
+    {
+      "id": "src_shell_shell",
       "label": "shell()",
-      "degree": 13
+      "degree": 14
     },
     {
       "id": "backend_src_main_set_client_offers",
@@ -412,59 +412,59 @@
   ],
   "surprises": [
     {
-      "source": "app()",
-      "target": "AppState",
+      "source": "renderLanding()",
+      "target": "shell()",
       "source_files": [
-        "backend/src/main.rs",
-        "backend/src/main.rs"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 0 \u2192 community 2"
-    },
-    {
-      "source": "AuthState",
-      "target": "TestIdentity",
-      "source_files": [
-        "backend/src/main.rs",
-        "backend/src/main.rs"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 0 \u2192 community 5"
-    },
-    {
-      "source": "replace_client_offers()",
-      "target": "Result",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 0 \u2192 community 11"
-    },
-    {
-      "source": "create_client()",
-      "target": "replace_client_offers()",
-      "source_files": [
-        "backend/src/main.rs",
-        "backend/src/main.rs"
+        "src/main.ts",
+        "src/shell.ts"
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
-      "note": "Bridges community 11 \u2192 community 2"
+      "why": "peripheral node `renderLanding()` unexpectedly reaches hub `shell()`"
     },
     {
-      "source": "AppState",
-      "target": "Arc",
+      "source": "legal()",
+      "target": "shell()",
       "source_files": [
-        "backend/src/main.rs",
-        ""
+        "src/main.ts",
+        "src/shell.ts"
       ],
       "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 2 \u2192 community 5"
+      "relation": "calls",
+      "why": "peripheral node `legal()` unexpectedly reaches hub `shell()`"
+    },
+    {
+      "source": "notFound()",
+      "target": "shell()",
+      "source_files": [
+        "src/main.ts",
+        "src/shell.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "peripheral node `notFound()` unexpectedly reaches hub `shell()`"
+    },
+    {
+      "source": "renderCatalog()",
+      "target": "esc()",
+      "source_files": [
+        "src/main.ts",
+        "src/shell.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "renderCatalog()",
+      "target": "shell()",
+      "source_files": [
+        "src/main.ts",
+        "src/shell.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
     }
   ],
   "tokens": {
