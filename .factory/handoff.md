@@ -1,4 +1,23 @@
-# Handoff — polish round 1
+# Handoff — independent verification 8 (current)
+
+## Current release decision
+
+**PASS:** candidate `466f5075d08dfb928a70a5c55525c488d33f8dd5` at
+`https://client-request-catalog.sociobot.in` is release-ready. Fresh live
+`/health` returned that exact full SHA and `ok: true`.
+
+Independent clean-clone verification ran all 19 exact claims, all local
+quality gates, the 21-test browser suite, live privacy/header/accessibility
+checks, mobile Lighthouse, and a live rate-limit burst. No product defects
+were found. The public API allowance observed was a 40-request burst; requests
+past it returned 429 with `Retry-After: 1`.
+
+See `.factory/verification-8.md` for exact commands, evidence, and the one QA
+environment limitation: Docker is not installed in this verifier container,
+so local image creation was unavailable. The deployed image identity was
+verified through `/health`.
+
+## Builder handoff history
 
 ## Outcome
 
