@@ -313,13 +313,8 @@
       "degree": 16
     },
     {
-      "id": "backend_src_main_authstate",
-      "label": "AuthState",
-      "degree": 14
-    },
-    {
-      "id": "backend_src_main_create_client",
-      "label": "create_client()",
+      "id": "src_main_shell",
+      "label": "shell()",
       "degree": 14
     },
     {
@@ -328,8 +323,13 @@
       "degree": 14
     },
     {
-      "id": "src_main_shell",
-      "label": "shell()",
+      "id": "backend_src_main_create_client",
+      "label": "create_client()",
+      "degree": 14
+    },
+    {
+      "id": "backend_src_main_authstate",
+      "label": "AuthState",
       "degree": 14
     },
     {
@@ -338,66 +338,66 @@
       "degree": 13
     },
     {
-      "id": "tsconfig_compileroptions",
-      "label": "compilerOptions",
+      "id": "backend_src_main_export_single_csv",
+      "label": "export_single_csv()",
       "degree": 12
     }
   ],
   "surprises": [
     {
-      "source": "AppState",
-      "target": "Option",
+      "source": "app()",
+      "target": "AppState",
       "source_files": [
         "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 3 \u2192 community 1"
-    },
-    {
-      "source": "load_owner_configuration()",
-      "target": "Option",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 3 \u2192 community 0"
-    },
-    {
-      "source": "authenticate()",
-      "target": "Result",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
+        "backend/src/main.rs"
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
       "note": "Bridges community 0 \u2192 community 1"
     },
     {
-      "source": "CachedOidc",
-      "target": "String",
+      "source": "client_links()",
+      "target": "ClientLink",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 0 \u2192 community 3"
+    },
+    {
+      "source": "AppState",
+      "target": "Arc",
       "source_files": [
         "backend/src/main.rs",
         ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 1 \u2192 community 3"
+    },
+    {
+      "source": "AppState",
+      "target": "Window",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "note": "Bridges community 1 \u2192 community 8"
+    },
+    {
+      "source": "AuthState",
+      "target": "CachedOidc",
+      "source_files": [
+        "backend/src/main.rs",
+        "backend/src/main.rs"
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
       "note": "Bridges community 3 \u2192 community 8"
-    },
-    {
-      "source": "AppState",
-      "target": "HashMap",
-      "source_files": [
-        "backend/src/main.rs",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "references",
-      "note": "Bridges community 8 \u2192 community 1"
     }
   ],
   "tokens": {
