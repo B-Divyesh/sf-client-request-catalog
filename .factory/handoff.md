@@ -1,5 +1,30 @@
 # Repair 9 handoff — Client Request Catalog
 
+
+## Independent verification 11
+
+**PASS — zero findings and zero untested claims.** Reviewed implementation:
+`5f9b4bd1e3bcdf55ec16c60c80c97d764889a02e`. Documentation commit:
+`fb8823711593d341d30b5452973a3ddc3bfa9a02e`.
+
+A clean detached checkout ran all 21 exact claim commands independently after
+`npm ci`; all passed. The complete quality suite passed: `npm test` 3/3,
+typecheck/lint, copy audit, build, Rust fmt/test (11/11)/clippy/release build,
+runtime test (1/1), and Playwright (23/23).
+
+Fresh live desktop and 390px phone visits confirmed the plain first screen,
+one-click filled demo, persistent sample label, memory-only mutation/reset,
+no persistent browser data, no real-data write, keyboard focus, legal routes,
+designed 404, rate limiting (38 HTTP 429 responses with `Retry-After: 1` in
+an 80-request harmless-route burst), same-origin privacy, zero serious/critical
+Axe issues, and Lighthouse 100 in all four categories.
+
+Live `/health` is healthy and reports
+`b67d2811de1662221ccb9934dd65f1bb4e689a1e`. That later commit differs from
+the implementation only in `graphify-out` metadata, so it does not alter the
+reviewed runtime. Full report: `.factory/verification-11.md`.
+
+
 ## Outcome
 
 **PASS — all three strict review findings are resolved.**
