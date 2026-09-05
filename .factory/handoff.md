@@ -1,5 +1,44 @@
 # Repair 9 handoff — Client Request Catalog
 
+## Strict review 4
+
+**PASS — zero findings and zero untested claims.** Full report:
+`.factory/review-4.md`.
+
+- Reviewed implementation: `5f9b4bd1e3bcdf55ec16c60c80c97d764889a02e`
+- Prior documentation commit: `b03281128913991a9c0ec9fc00ae99daad516f42`
+- Review-start repository tip: `a2696b34d901b98b4aa50fca9560794ae36a44cc`
+- Live health build: `b67d2811de1662221ccb9934dd65f1bb4e689a1e`
+
+The live build differs from the implementation only in Graphify output. No
+product code was changed during review.
+
+A clean clone installed with `npm ci` and passed all 21 declared claim
+commands independently. It also passed 3 Node tests, typecheck/lint, the copy
+audit, production build, Rust formatting, 11 Rust tests, strict Clippy, the
+release build, the restart/runtime test, and all 23 Playwright tests.
+
+Fresh live desktop and 390×844 phone visits confirmed the job, audience, and
+**Try it with sample data** action before scrolling. The sample opened with
+three offers, two links, three requests, and the persistent nothing-is-saved
+label. A mixed-price sample request appeared only in memory; reset restored
+the seed and every browser store stayed empty.
+
+All real routes, legal pages, internal links, route titles, keyboard focus,
+light/dark accessibility, reduced motion, security headers, the designed 404,
+and same-origin privacy checks passed. The live harmless-route burst returned
+39 HTTP 429 responses with `Retry-After: 1`; health stayed 200. Lighthouse
+scored 100/100/100/100 with LCP 1.38 s, CLS 0, and TBT 0 ms.
+
+A separate fresh SQLite check accepted the documented maximum request values,
+rejected every over-limit and invalid value, recovered with a valid request,
+and shut down cleanly. Restart persistence and tenant separation also passed
+in the declared runtime, browser, and Rust tests.
+
+Known non-blocking gap: the researched subscription is not offered because
+the product's Sociobot billing entry is not enabled. The site honestly says it
+is free and exposes no broken payment path.
+
 
 ## Independent verification 11
 
