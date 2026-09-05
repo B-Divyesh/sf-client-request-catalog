@@ -455,7 +455,7 @@ test("real owner offer lifecycle preserves referenced requests and removes unuse
   ).toBe(200);
 });
 
-test("@claim:demo-isolated sample requests never enter the real inbox", async ({
+test("@claim:demo-isolated sample changes stay in memory and never enter the real inbox", async ({
   page,
   request,
 }) => {
@@ -469,6 +469,14 @@ test("@claim:demo-isolated sample requests never enter the real inbox", async ({
   page.on("request", (item) => paths.push(new URL(item.url()).pathname));
   await clientIp(page, 11);
   await page.goto("/demo");
+  const firstOffer = page.locator(".offer-edit-form").first();
+  await firstOffer
+    .locator('input[name="name"]')
+    .fill("Browser memory maintenance visit");
+  await firstOffer.getByRole("button", { name: "Save offer" }).click();
+  await expect(
+    page.locator('input[value="Browser memory maintenance visit"]'),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "View sample client catalog" })
     .click();
@@ -479,6 +487,45 @@ test("@claim:demo-isolated sample requests never enter the real inbox", async ({
   await expect(page.locator("#form-message")).toContainText(
     "Nothing was saved",
   );
+  await page
+    .getByRole("button", { name: "Return to sample owner workspace" })
+    .click();
+  await expect(
+    page.locator('input[value="Browser memory maintenance visit"]'),
+  ).toBeVisible();
+  await expect(page.locator(".inbox-row")).toHaveCount(4);
+  await expect(page.locator(".inbox-row").first()).toContainText(
+    "Jordan Example",
+  );
+
+  const persistentStores = await page.evaluate(async () => ({
+    localStorage: Object.keys(localStorage),
+    sessionStorage: Object.keys(sessionStorage),
+    indexedDb: (await indexedDB.databases()).map((database) => database.name),
+    cacheStorage: await caches.keys(),
+  }));
+  expect(persistentStores).toEqual({
+    localStorage: [],
+    sessionStorage: [],
+    indexedDb: [],
+    cacheStorage: [],
+  });
+
+  await page.reload();
+  await expect(
+    page.getByText("Demo — sample data, nothing is saved"),
+  ).toBeVisible();
+  await expect(
+    page.locator('input[value="Quarterly maintenance visit"]'),
+  ).toBeVisible();
+  await expect(
+    page.locator('input[value="Browser memory maintenance visit"]'),
+  ).toHaveCount(0);
+  await expect(page.locator(".offer-edit-form")).toHaveCount(3);
+  await expect(page.locator(".inbox-row")).toHaveCount(3);
+  await expect(
+    page.locator(".inbox-row").filter({ hasText: "Jordan Example" }),
+  ).toHaveCount(0);
   expect(paths.some((value) => value.startsWith("/api/demo/"))).toBe(false);
   expect(paths.some((value) => value.startsWith("/api/catalog/"))).toBe(false);
   expect(
@@ -696,7 +743,7 @@ test("@claim:owner-exports owner exports CSV and PDF", async ({
   expect(parsedDemoPdf.text).toContain("Quarterly maintenance visit x 1");
 });
 
-test("@claim:request-status-updates owner status changes are announced and persist", async ({
+test("@claim:request-status-updates every owner status change is announced and persists", async ({
   page,
   request,
 }) => {
@@ -720,30 +767,36 @@ test("@claim:request-status-updates owner status changes are announced and persi
   await authenticateOwnerPage(page);
   await clientIp(page, 88);
   await page.goto("/owner");
-  const requestRow = page.locator(".inbox-row").filter({ hasText: reference });
-  await expect(requestRow).toBeVisible();
-  await requestRow.locator("select[data-status]").selectOption("quoted");
-  await expect(requestRow.locator(".request-status-message")).toHaveText(
-    "Status saved as quoted.",
-  );
-  await expect(requestRow.locator(".status")).toHaveText("quoted");
-  await expect
-    .poll(async () => {
-      const overview = await (
-        await request.get("/api/admin/overview", { headers: ownerHeaders() })
-      ).json();
-      return overview.requests.find(
-        (row: { reference: string }) => row.reference === reference,
-      )?.status;
-    })
-    .toBe("quoted");
+  for (const status of ["quoted", "closed", "new"] as const) {
+    const requestRow = page
+      .locator(".inbox-row")
+      .filter({ hasText: reference });
+    await expect(requestRow).toBeVisible();
+    await requestRow.locator("select[data-status]").selectOption(status);
+    await expect(requestRow.locator(".request-status-message")).toHaveText(
+      `Status saved as ${status}.`,
+    );
+    await expect(requestRow.locator(".status")).toHaveText(status);
+    await expect
+      .poll(async () => {
+        const overview = await (
+          await request.get("/api/admin/overview", { headers: ownerHeaders() })
+        ).json();
+        return overview.requests.find(
+          (row: { reference: string }) => row.reference === reference,
+        )?.status;
+      })
+      .toBe(status);
 
-  await page.reload();
-  const reloadedRow = page.locator(".inbox-row").filter({ hasText: reference });
-  await expect(reloadedRow.locator("select[data-status]")).toHaveValue(
-    "quoted",
-  );
-  await expect(reloadedRow.locator(".status")).toHaveText("quoted");
+    await page.reload();
+    const reloadedRow = page
+      .locator(".inbox-row")
+      .filter({ hasText: reference });
+    await expect(reloadedRow.locator("select[data-status]")).toHaveValue(
+      status,
+    );
+    await expect(reloadedRow.locator(".status")).toHaveText(status);
+  }
 });
 
 test("@claim:client-offer-visibility each client link has its assigned offers", async ({
@@ -780,43 +833,98 @@ test("@claim:client-offer-visibility each client link has its assigned offers", 
   ).toEqual([2]);
 });
 
-test("@claim:individual-request-privacy @claim:deletion-audit-minimal one-request export and deletion retain only audit fields", async ({
+test("@claim:individual-request-privacy @claim:deletion-audit-minimal one-request export excludes another client and deletion retains only audit fields", async ({
   request,
 }) => {
   await ensureWorkspace(request);
   const headers = ownerHeaders();
-  const client = await request.post("/api/admin/clients", {
+  const firstClient = await request.post("/api/admin/clients", {
     headers,
-    data: { name: "Privacy", expires_in_days: 30, offer_ids: [1] },
+    data: {
+      name: "First private client",
+      expires_in_days: 30,
+      offer_ids: [1],
+    },
   });
-  const token = ((await client.json()) as { token: string }).token;
-  for (const [email, suffix] of [
-    ["first@example.test", "17"],
-    ["second@example.test", "18"],
-  ] as const) {
-    expect(
-      (
-        await request.post("/api/catalog/" + token + "/requests", {
-          headers: { "x-forwarded-for": "198.51.100." + suffix },
-          data: {
-            name: "Requester",
-            email,
-            items: [{ product_id: 1, quantity: 1 }],
-          },
-        })
-      ).status(),
-    ).toBe(200);
-  }
+  const secondClient = await request.post("/api/admin/clients", {
+    headers,
+    data: {
+      name: "Second private client",
+      expires_in_days: 30,
+      offer_ids: [2],
+    },
+  });
+  const firstToken = ((await firstClient.json()) as { token: string }).token;
+  const secondToken = ((await secondClient.json()) as { token: string }).token;
+  const firstCreated = await request.post(
+    "/api/catalog/" + firstToken + "/requests",
+    {
+      headers: { "x-forwarded-for": "198.51.100.17" },
+      data: {
+        name: "First Requester",
+        email: "first@example.test",
+        phone: "+1 555 0101",
+        reference: "FIRST-PO-101",
+        note: "Use the first client entrance.",
+        items: [{ product_id: 1, quantity: 1 }],
+      },
+    },
+  );
+  expect(firstCreated.status()).toBe(200);
+  const firstReference = (
+    (await firstCreated.json()) as { reference: string }
+  ).reference;
+  const secondCreated = await request.post(
+    "/api/catalog/" + secondToken + "/requests",
+    {
+      headers: { "x-forwarded-for": "198.51.100.18" },
+      data: {
+        name: "Second Requester",
+        email: "second@example.test",
+        phone: "+1 555 0202",
+        reference: "SECOND-PO-202",
+        note: "Use the second client loading bay.",
+        items: [{ product_id: 2, quantity: 2 }],
+      },
+    },
+  );
+  expect(secondCreated.status()).toBe(200);
+  const secondReference = (
+    (await secondCreated.json()) as { reference: string }
+  ).reference;
   const rows = (
     await (await request.get("/api/admin/overview", { headers })).json()
   ).requests as Array<{ id: number; email: string }>;
   const first = rows.find((row) => row.email === "first@example.test")!;
   const second = rows.find((row) => row.email === "second@example.test")!;
-  expect(
-    await (
-      await request.get("/api/admin/requests/" + first.id + ".csv", { headers })
-    ).text(),
-  ).toContain("first@example.test");
+  const exportResponse = await request.get(
+    "/api/admin/requests/" + first.id + ".csv",
+    { headers },
+  );
+  expect(exportResponse.status()).toBe(200);
+  const individualExport = await exportResponse.text();
+  for (const firstRequestValue of [
+    firstReference,
+    "First Requester",
+    "first@example.test",
+    "+1 555 0101",
+    "FIRST-PO-101",
+    "Use the first client entrance.",
+    "Quarterly maintenance visit x 1",
+  ]) {
+    expect(individualExport).toContain(firstRequestValue);
+  }
+  for (const secondRequestValue of [
+    secondReference,
+    "Second Requester",
+    "second@example.test",
+    "+1 555 0202",
+    "SECOND-PO-202",
+    "Use the second client loading bay.",
+    "Replacement fitting set x 2",
+  ]) {
+    expect(individualExport).not.toContain(secondRequestValue);
+  }
   expect(
     (
       await request.delete("/api/admin/requests/" + first.id, { headers })
